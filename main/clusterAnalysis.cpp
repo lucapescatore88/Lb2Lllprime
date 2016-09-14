@@ -39,6 +39,7 @@ namespace po = boost::program_options;
 
 struct config{
   std::vector<std::string> files2analyse;
+  std::string outputpath;
   bool debug;
   bool simulation;
   std::string clusterAlg;
@@ -79,13 +80,14 @@ int parseOptions(config &c, int argc, char *argv[]){
   // declare options
   po::options_description desc("Allowed options") ;
   desc.add_options()
-  ("help", "show this help")
-  ("file,f", po::value<std::vector<std::string>>(&c.files2analyse)->multitoken(), "corrected test beam data file")
-  ("simulation,s", po::bool_switch(&c.simulation), "Simulated input?")
-  // ("clusteralg,c", po::value<std::string>(&c.clusterAlg)->default_value("b"), "clustering algorithm: b for Boole or m for Maxs")
-  ("tag,t", po::value<std::string>(&c.tag)->default_value(""), "tag that is added to the output file name")
-  ("debug,d", po::bool_switch(&c.debug), "debug output")
-  ;
+    ("help", "show this help")
+    ("file,f", po::value<std::vector<std::string>>(&c.files2analyse)->multitoken(), "corrected test beam data file")
+    ("outputpath,o", po::value<std::string>(&c.outputpath)->default_value("/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/ClusterizedSamples/"), "output path for clusterized samples")
+    ("simulation,s", po::bool_switch(&c.simulation), "Simulated input?")
+    // ("clusteralg,c", po::value<std::string>(&c.clusterAlg)->default_value("b"), "clustering algorithm: b for Boole or m for Maxs")
+    ("tag,t", po::value<std::string>(&c.tag)->default_value(""), "tag that is added to the output file name")
+    ("debug,d", po::bool_switch(&c.debug), "debug output")
+    ;
 
   // actually do the parsing
   po::variables_map vm;
@@ -186,7 +188,7 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c){
   std::map<std::string, std::vector<std::vector<Channel>*>* > data;
 
   std::vector<double> xPositions;
-  std::string offsetFileName = ( "/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/ClusterizedSamples/" + removePath(file2analyse).ReplaceAll(".root", ".txt") ).Data();
+  std::string offsetFileName = ( c.outputpath + removePath(file2analyse).ReplaceAll(".root", ".txt") ).Data();
   bool produceOffsetFile{false};
   std::vector<double> xOffsets;
   std::vector<double> track_distances;
@@ -337,11 +339,11 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c){
       plot->Draw();
 
       //      can_offset.SaveAs("/home/ttekampe/SciFi/results/moduleOffset/" + removePath(file2analyse).ReplaceAll(".root", ".pdf") );
-      can_offset.SaveAs("/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/ClusterizedSamples/" + removePath(file2analyse).ReplaceAll(".root", ".pdf") );
+      can_offset.SaveAs(c.outputpath + removePath(file2analyse).ReplaceAll(".root", ".pdf") );
 
       fr->Print("v");
 
-      std::ofstream offsetFile( ("/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/ClusterizedSamples/" + removePath(file2analyse).ReplaceAll(".root", ".txt") ).Data() );
+      std::ofstream offsetFile( (c.outputpath + removePath(file2analyse).ReplaceAll(".root", ".txt") ).Data() );
       offsetFile << rv_mean.getVal() << "\n";
       offsetFile.close();
 
@@ -414,7 +416,7 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c){
 
     ClusterMonitor clMonitor;
     clMonitor.WriteToNtuple(clCreators["simulation"], 
-      ("/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/ClusterizedSamples/" + removePath(file2analyse).ReplaceAll(".root", "_clusterAnalyis" + c.tag +".root")).Data(),
+      (c.outputpath + removePath(file2analyse).ReplaceAll(".root", "_clusterAnalyis" + c.tag +".root")).Data(),
       features );
       for (auto& module : data){
        for(unsigned int entryIndex = 0; entryIndex < module.second->size(); ++entryIndex){
@@ -438,7 +440,7 @@ int main(int argc, char *argv[]){
     return 0;
   }
 
-  std::ofstream hitEffFile("/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/hitEfficiency.txt");
+  std::ofstream hitEffFile(c.outputpath + "hitEfficiency.txt");
   hitEffFile << "position\tlightyield\tlightyieldErr\tefficiency\tefficiencyErr\n";
   
   std::pair<EDouble, EDouble> lightAndEff;
