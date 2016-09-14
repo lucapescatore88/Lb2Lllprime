@@ -186,7 +186,7 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c){
   std::map<std::string, std::vector<std::vector<Channel>*>* > data;
 
   std::vector<double> xPositions;
-  std::string offsetFileName = ( "/home/ttekampe/SciFi/results/moduleOffset/" + removePath(file2analyse).ReplaceAll(".root", ".txt") ).Data();
+  std::string offsetFileName = ( "/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/ClusterizedSamples/" + removePath(file2analyse).ReplaceAll(".root", ".txt") ).Data();
   bool produceOffsetFile{false};
   std::vector<double> xOffsets;
   std::vector<double> track_distances;
@@ -336,11 +336,12 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c){
       gauss.plotOn(plot);
       plot->Draw();
 
-      can_offset.SaveAs("/home/ttekampe/SciFi/results/moduleOffset/" + removePath(file2analyse).ReplaceAll(".root", ".pdf") );
+      //      can_offset.SaveAs("/home/ttekampe/SciFi/results/moduleOffset/" + removePath(file2analyse).ReplaceAll(".root", ".pdf") );
+      can_offset.SaveAs("/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/ClusterizedSamples/" + removePath(file2analyse).ReplaceAll(".root", ".pdf") );
 
       fr->Print("v");
 
-      std::ofstream offsetFile( ("/home/ttekampe/SciFi/results/moduleOffset/" + removePath(file2analyse).ReplaceAll(".root", ".txt") ).Data() );
+      std::ofstream offsetFile( ("/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/ClusterizedSamples/" + removePath(file2analyse).ReplaceAll(".root", ".txt") ).Data() );
       offsetFile << rv_mean.getVal() << "\n";
       offsetFile.close();
 
@@ -413,7 +414,7 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c){
 
     ClusterMonitor clMonitor;
     clMonitor.WriteToNtuple(clCreators["simulation"], 
-      ("/home/ttekampe/SciFi/results/clusters/" + removePath(file2analyse).ReplaceAll(".root", "_clusterAnalyis" + c.tag +".root")).Data(),
+      ("/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/ClusterizedSamples/" + removePath(file2analyse).ReplaceAll(".root", "_clusterAnalyis" + c.tag +".root")).Data(),
       features );
       for (auto& module : data){
        for(unsigned int entryIndex = 0; entryIndex < module.second->size(); ++entryIndex){
@@ -437,7 +438,7 @@ int main(int argc, char *argv[]){
     return 0;
   }
 
-  std::ofstream hitEffFile("/home/ttekampe/SciFi/results/hitEfficiency.txt");
+  std::ofstream hitEffFile("/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/hitEfficiency.txt");
   hitEffFile << "position\tlightyield\tlightyieldErr\tefficiency\tefficiencyErr\n";
   
   std::pair<EDouble, EDouble> lightAndEff;
