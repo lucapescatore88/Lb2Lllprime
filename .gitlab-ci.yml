@@ -8,7 +8,8 @@ build:
   tags:
     - cvmfs
   script:
-    - mkdir build
-    - cd build
-    - cmake ..
-    - make
+    - ls /cvmfs/atlas.cern.ch/
+    # - mkdir build
+    # - cd build
+    # - cmake ..
+    # - make
