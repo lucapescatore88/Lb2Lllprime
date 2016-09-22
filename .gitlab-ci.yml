@@ -12,5 +12,6 @@ build:
     - /cvmfs/lhcb.cern.ch/lib/lhcb/LBSCRIPTS/LBSCRIPTS_v8r6p7/InstallArea/scripts/SetupProject.sh DaVinci
     - mkdir build
     - cd build
+    - echo $LD_LIBRARY_PATH
     - cmake ..
     - make
