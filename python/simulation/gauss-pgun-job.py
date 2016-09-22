@@ -1,4 +1,4 @@
-# SetupProject gauss v46r7p2
+# the CondDB and DDDB tags for the 5x geometry require Gauss v50 or higher
 #
 
 import sys
