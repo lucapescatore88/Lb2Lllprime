@@ -6,6 +6,7 @@ from Gaudi.Configuration import *
 from Configurables import LHCbApp, CondDB
 from GaudiPython.Bindings import gbl, AppMgr
 import GaudiPython
+import math
 
 LHCbApp().DataType   = "Upgrade"
 LHCbApp().Simulation = True
@@ -45,7 +46,7 @@ points = {
 
 for pos_name, pos_point in points.iteritems():
     print("===============================================================================")
-    print("Getting info for testbeam position"+pos_name+".")
+    print("Getting info for testbeam position "+pos_name+".")
     point = pos_point
     global_point = fibremat.geometry().toGlobal(point)
     
@@ -53,12 +54,14 @@ for pos_name, pos_point in points.iteritems():
     print "In the global frame the position is ", global_point.x(), global_point.y(), global_point.z()
     
     mat_thickness = fibremat.fibreMatMaxZ() - fibremat.fibreMatMinZ()
-
+    angle = 0 #10/180*3.14
+    
     hit = gbl.LHCb.MCHit()
-    hit_point_local = gbl.Gaudi.XYZPoint(point.x(),point.y(),point.z()-(mat_thickness/2.)) 
+    hit_point_local = gbl.Gaudi.XYZPoint(point.x()-math.tan(angle)*mat_thickness/2.,point.y(),point.z()-(mat_thickness/2.)) 
     hit_point_global = fibremat.geometry().toGlobal(hit_point_local)
     hit.setEntry(hit_point_global)
-    disp = gbl.Gaudi.XYZVector(0,0,mat_thickness)
+    
+    disp = gbl.Gaudi.XYZVector(math.sin(angle),0.,mat_thickness)
     hit.setDisplacement(disp)
     
     FTPair = gbl.std.pair(gbl.LHCb.FTChannelID,'double')

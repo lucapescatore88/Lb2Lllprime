@@ -52,8 +52,8 @@ def execute(pos="c", angle=0):
 #position c: 30.5 cm (near sipm) ~ 5 cm distance from sipm
 #default y table position: 72.4 cm
 
-  # The target is FTChannelID 160, which is the gross cell ID 33 of SiPM 1 in
-  # layer 0, module 0, mat 0. The local and global coordinates are:
+  # The target is FTChannelID 160, which is the gross cell ID 33 (cell ID 32) 
+  # of SiPM 1 in layer 0, module 0, mat 0. The local and global coordinates are:
   # Position A: 
   #   local  = (-219.75,1213.5-50,0)
   #   global = (2689.75, 2376.98, 7864.01) 
