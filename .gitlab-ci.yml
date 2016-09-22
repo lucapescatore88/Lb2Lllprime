@@ -1,5 +1,5 @@
 before_script:
-  - yum install -y glibc-headers glibc-devel git gsl-devel freetype-devel libSM libX11-devel libXext-devel make gcc-c++ gcc binutils libXpm-devel libXft-devel boost-devel
+  - yum install -y gsl-devel boost-devel
 
 build:
   tags:
