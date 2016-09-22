@@ -34,11 +34,8 @@ def execute(pos="c", angle=0):
 
   Gauss().DataType = "Upgrade"
 
-
-  # FTv5 from Luigi
-  LHCbApp().DDDBtag = "dddb-20150424"
-  LHCbApp().CondDBtag = "sim-20140204-vc-md100"
-
+  LHCbApp().DDDBtag = "dddb-20160304"
+  LHCbApp().CondDBtag = "sim-20150716-vc-md100"
 
   importOptions('$LBPGUNSROOT/options/PGuns.py')
   from Configurables import ParticleGun
