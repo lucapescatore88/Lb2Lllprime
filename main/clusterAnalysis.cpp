@@ -83,7 +83,7 @@ int parseOptions(config &c, int argc, char *argv[]){
     ("help", "show this help")
     ("file,f", po::value<std::vector<std::string>>(&c.files2analyse)->multitoken(), "corrected test beam data file")
     //    ("outputpath,o", po::value<std::string>(&c.outputpath)->default_value("/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/ClusterizedSamples/"), "output path for clusterized samples")
-    ("outputpath,o", po::value<std::string>(&c.outputpath)->default_value(os.path.expanduser('.')+"/"), "output path for clusterized samples")
+    ("outputpath,o", po::value<std::string>(&c.outputpath)->default_value(""), "output path for clusterized samples")
     ("simulation,s", po::bool_switch(&c.simulation), "Simulated input?")
     // ("clusteralg,c", po::value<std::string>(&c.clusterAlg)->default_value("b"), "clustering algorithm: b for Boole or m for Maxs")
     ("tag,t", po::value<std::string>(&c.tag)->default_value(""), "tag that is added to the output file name")

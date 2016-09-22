@@ -66,12 +66,12 @@ int main(){
     }
 
     std::vector<std::vector<Channel>*>* data;
-    data = parseCorrectedRootTree(inputTree, 1, 4, 128, true);
+    data = parseCorrectedRootTree(inputTree, 1, 4, 128);
 
 
 
     ClusterCreator clCreator;
-    int currentNumberOfClusters{0};
+    unsigned int currentNumberOfClusters{0};
     int missedEvents{0};
     for (const auto& event : *data){
       clCreator.FindClustersInEventBoole(*event, 1.5, 2.5, 4.0, 100, false);
@@ -129,12 +129,12 @@ int main(){
     }
 
     std::vector<std::vector<Channel>*>* data;
-    data = parseCorrectedRootTree(inputTree, 1, 4, 128, true, 0.45);
+    data = parseCorrectedRootTree(inputTree, 1, 4, 128, 0.45);
 
 
 
     ClusterCreator clCreator;
-    int currentNumberOfClusters{0};
+    unsigned int currentNumberOfClusters{0};
     int missedEvents{0};
     for (const auto& event : *data){
       clCreator.FindClustersInEventBoole(*event, 1.5, 2.5, 4.0, 100, false);
