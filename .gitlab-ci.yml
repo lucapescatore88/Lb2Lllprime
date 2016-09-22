@@ -1,7 +1,7 @@
 before_script:
   - yum install -y glibc-headers
   - yum install -y glibc-devel
-  - source ./SetupEnv.sh
+  - source /cvmfs/cern.ch/group_login.sh
   - SetupProject DaVinci
 
 build:
