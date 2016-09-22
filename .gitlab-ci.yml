@@ -1,6 +1,5 @@
-# before_script:
-#     - yum install -y glibc-headers
-#     - yum install -y glibc-devel
+before_script:
+  - yum install -y glibc-headers glibc-devel git gsl-devel freetype-devel libSM libX11-devel libXext-devel make gcc-c++ gcc binutils libXpm-devel libXft-devel boost-devel
 
 build:
   tags:
@@ -12,6 +11,7 @@ build:
     - source /cvmfs/lhcb.cern.ch/lib/lhcb/LBSCRIPTS/LBSCRIPTS_v8r6p7/InstallArea/scripts/SetupProject.sh DaVinci
     - mkdir build
     - cd build
-    - echo $LD_LIBRARY_PATH
+    - export CC=`which gcc`
+    - export CXX=`which g++`
     - cmake ..
     - make
