@@ -9,7 +9,7 @@ build:
     - ls /cvmfs/lhcb.cern.ch/
     - export USER=TestUser
     - source /cvmfs/lhcb.cern.ch/group_login.sh --no-userarea
-    - SetupProject DaVinci
+    - /cvmfs/lhcb.cern.ch/lib/lhcb/LBSCRIPTS/LBSCRIPTS_v8r6p7/InstallArea/scripts/SetupProject.sh DaVinci
     - mkdir build
     - cd build
     - cmake ..
