@@ -1,5 +1,4 @@
-services:
-  - cvmfs
+image: gitlabci01
 
 before_script:
   - yum install -y glibc-headers
