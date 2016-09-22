@@ -6,10 +6,10 @@ build:
   tags:
     - cvmfs
   script:
-    - ls /cvmfs/lhcb.cern.ch/
-    #- source /cvmfs/cern.ch/group_login.sh
-    #- SetupProject DaVinci
-    # - mkdir build
-    # - cd build
-    # - cmake ..
-    # - make
+    #- ls /cvmfs/lhcb.cern.ch/
+    - source /cvmfs/cern.ch/group_login.sh
+    - SetupProject DaVinci
+    - mkdir build
+    - cd build
+    - cmake ..
+    - make
