@@ -26,7 +26,6 @@ def execute(pos="c", angle=0):
   importOptions("$APPCONFIGOPTS/Conditions/Upgrade.py")
   importOptions("$APPCONFIGOPTS/Persistency/Compression-ZLIB-1.py")
 
-  #importOptions("$APPCONFIGOPTS/Gauss/Gauss-Upgrade-Baseline-20131029.py")
   # FTv5
   importOptions('$APPCONFIGOPTS/Gauss/Gauss-Upgrade-Baseline-20150522.py')
   
@@ -35,20 +34,11 @@ def execute(pos="c", angle=0):
 
   Gauss().DataType = "Upgrade"
 
-  #LHCbApp().DDDBtag = "dddb-20150424"
-  #LHCbApp().CondDBtag = "sim-20140204-vc-md100"
-
-  #LHCbApp().DDDBtag = "dddb-20150424"
-  #LHCbApp().CondDBtag = "sim-20140204-vc-md100"
 
   # FTv5 from Luigi
   LHCbApp().DDDBtag = "dddb-20150424"
   LHCbApp().CondDBtag = "sim-20140204-vc-md100"
-  #DDDBConf().DbRoot = "/home/ttekampe/SciFi/FTv5/DDDB_FTv5_20150424_s20140204_lhcbv38r6/lhcb.xml"
 
-  #work around for bug in DB
-  CondDB().LoadCALIBDB = 'HLT1'
-  CondDB().addLayer(dbFile = "DDDB_FTv5_20150424_s20140204_lhcbv38r6.db", dbName="DDDB" )
 
   importOptions('$LBPGUNSROOT/options/PGuns.py')
   from Configurables import ParticleGun
@@ -65,34 +55,58 @@ def execute(pos="c", angle=0):
 #position c: 30.5 cm (near sipm) ~ 5 cm distance from sipm
 #default y table position: 72.4 cm
 
+  # The target is FTChannelID 160, which is the gross cell ID 33 of SiPM 1 in
+  # layer 0, module 0, mat 0. The local and global coordinates are:
+  # Position A: 
+  #   local  = (-219.75,1213.5-50,0)
+  #   global = (2689.75, 2376.98, 7864.01) 
+  # Position C:
+  #   local  = (-219.75,-1213.5+50,0)
+  #   global = (2689.75,   50.00, 7855.63)
+  # The minimum z of the mat should be 7854.8 mm.
 
-  moduleWidth = 552.4 + 3 # 3 = modul gap
-  z_orig = 7834. # 7620
-  z_target = 9439.
-  x_orig = 4. * moduleWidth + 65.3 # centre of the innermost fibre mat of the second module from left when looking into beam direction (neglected half a gap)
-  #y_orig = 2417.5
+  posA = {
+          "x" : 2689.75,
+          "y" : 2376.98
+         }
+  posC = {
+          "x": 2689.75,
+          "y": 50,
+         }  
+  
+  target_pos = {}  
   if pos == "a":
-    y_orig = 50 # 5 cm from mirror
+      target_pos = posA
   elif pos == "c":
-    y_orig = 2417.5 - 50. # 5 cm from SiPM
-  elif pos.isdigit():
-    y_orig = float(pos)
+      target_pos = posC
   else:
-    exit()
+      exit()
+  
+  # origin point
+  Delta_z = 20.
+  orig_z = 7854.8-Delta_z # 2 cm towards small z w.r.t. minimum mat z
+  orig_x = target_pos["x"] + Delta_z*tan(radians(angle))
+  orig_y = target_pos["y"]
 
-  ParticleGun().MaterialEval.Xorig = x_orig
-  ParticleGun().MaterialEval.Yorig = y_orig
-  #ParticleGun().MaterialEval.Zorig = 7620
-  ParticleGun().MaterialEval.Zorig = z_orig
-  ParticleGun().MaterialEval.ModP = 150000 #150GeV
+  ParticleGun().MaterialEval.Xorig = orig_x
+  ParticleGun().MaterialEval.Yorig = orig_y
+  ParticleGun().MaterialEval.Zorig = orig_z
 
-  ParticleGun().MaterialEval.ZPlane = z_target
-  ParticleGun().MaterialEval.Xmin = x_orig - 1.7 + (z_target - z_orig) / tan( radians(90 - angle) )
-  ParticleGun().MaterialEval.Xmax = x_orig + 1.7 + (z_target - z_orig) / tan( radians(90 - angle) )
-  ParticleGun().MaterialEval.Ymin = y_orig - 1.7
-  ParticleGun().MaterialEval.Ymax = y_orig + 1.7
+  # target point
+  target_x = target_pos["x"]
+  target_y = target_pos["y"]
+  target_z =  9439. #7870. #9439. #just shoot somewhere far, far away
+
+  ParticleGun().MaterialEval.ZPlane = target_z
+  ParticleGun().MaterialEval.Xmin = target_x - 1.7
+  ParticleGun().MaterialEval.Xmax = target_x + 1.7
+  ParticleGun().MaterialEval.Ymin = target_y - 1.7
+  ParticleGun().MaterialEval.Ymax = target_y + 1.7
+  
+  # particle options 
   ParticleGun().MaterialEval.PdgCode = 211
-
+  ParticleGun().MaterialEval.ModP = 150000 #150GeV
+  
   # Set min and max number of particles to produce in an event
   from Configurables import FlatNParticles
   ParticleGun().addTool(FlatNParticles, name="FlatNParticles")
@@ -104,10 +118,11 @@ def execute(pos="c", angle=0):
   GaussGen.FirstEventNumber = 1
   GaussGen.RunNumber = 1082
 
-  LHCbApp().EvtMax = 10
+  LHCbApp().EvtMax = 2000
 
   HistogramPersistencySvc().OutputFile = outpath+'-GaussHistos.root'
 
   OutputStream("GaussTape").Output = "DATAFILE='PFN:%s.sim' TYP='POOL_ROOTTREE' OPT='RECREATE'"%outpath
 
-#execute()
+#execute("a",20)
+
