@@ -1,13 +1,12 @@
-tags:
-  -cvmfs
-
 before_script:
-  - yum install -y glibc-headers
-  - yum install -y glibc-devel
-  - source /cvmfs/cern.ch/group_login.sh
-  - SetupProject DaVinci
+    - yum install -y glibc-headers
+    - yum install -y glibc-devel
+    - source /cvmfs/cern.ch/group_login.sh
+    - SetupProject DaVinci
 
 build:
+  tags:
+    - cvmfs
   script:
     - mkdir build
     - cd build
