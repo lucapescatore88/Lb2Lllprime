@@ -7,7 +7,7 @@ build:
     - cvmfs
   script:
     - ls /cvmfs/lhcb.cern.ch/
-    - source /cvmfs/cern.ch/group_login.sh
+    - source /cvmfs/lhcb.cern.ch/group_login.sh
     - SetupProject DaVinci
     - mkdir build
     - cd build
