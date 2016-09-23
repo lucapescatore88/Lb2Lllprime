@@ -54,24 +54,25 @@ def execute(pos="c", angle=0):
 
   # The target is FTChannelID 160, which is the gross cell ID 33 (cell ID 32) 
   # of SiPM 1 in layer 0, module 0, mat 0. The local and global coordinates are:
-  # Position A: 
-  #   local  = (-219.75,1213.5-50,0)
-  #   global = (2689.75, 2376.98, 7864.01) 
-  # Position C:
+  # Position A (near mirror)
   #   local  = (-219.75,-1213.5+50,0)
   #   global = (2689.75,   50.00, 7855.63)
+  # Position C (near SiPM)
+  #   local  = (-219.75,1213.5-50,0)
+  #   global = (2689.75, 2376.98, 7864.01)   
   # The minimum z of the mat should be 7854.8 mm.
-
+  
   posA = {
-          "x" : 2689.75,
-          "y" : 2376.98,
-          "z" : 7864.01
-         }
-  posC = {
           "x": 2689.75,
           "y": 50,
           "z": 7855.63
          }  
+  posC = {
+          "x" : 2689.75,
+          "y" : 2376.98,
+          "z" : 7864.01
+         }
+
   
   hit_pos = {}  
   if pos == "a":

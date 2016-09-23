@@ -21,7 +21,7 @@ Boole().DataType   = "Upgrade"
 Boole().DetectorDigi = ['VP', 'UT', 'FT', 'Magnet']
 Boole().DetectorLink = ['VP', 'UT', 'Tr', 'FT', 'Magnet']
 Boole().DetectorMoni = ['VP', 'UT', 'FT',  'Magnet']
-Boole().EvtMax = 60
+Boole().EvtMax = 2000
 
 #===============================================================================
 # Configure Digitization
