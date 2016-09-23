@@ -82,7 +82,7 @@ att.YMaxIrradiatedZone = -1.#500
 from Configurables import MCFTDepositDistributionTool
 
 distributiontool = MCFTDepositDistributionTool()
-distributiontool.WidthOfPhotonDistribution = 0.05
+distributiontool.WidthOfPhotonDistribution = 0.125
 
 
 from Configurables import MCFTDepositCreator
