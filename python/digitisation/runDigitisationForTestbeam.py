@@ -170,7 +170,7 @@ while True:
   digits = evt['/Event/MC/FT/Digits'].containedObjects()
   for digit in digits:
     channel = digit.channelID()
-    if channel.layer() in layers and channel.sipmId() in sipmIDs and channel.module() == 1 and channel.quarter() == 3:
+    if channel.layer() in layers and channel.sipmId() in sipmIDs and channel.module() == 0 and channel.quarter() == 3:
       sipmValPtr[channel.layer()][channel.sipmId()][channel.sipmCell()][0] = digit.adcCount() / sipm_gain
 
   for t in outputTrees:
