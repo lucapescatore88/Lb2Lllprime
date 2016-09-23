@@ -82,7 +82,6 @@ int parseOptions(config &c, int argc, char *argv[]){
   desc.add_options()
     ("help", "show this help")
     ("file,f", po::value<std::vector<std::string>>(&c.files2analyse)->multitoken(), "corrected test beam data file")
-    //    ("outputpath,o", po::value<std::string>(&c.outputpath)->default_value("/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/ClusterizedSamples/"), "output path for clusterized samples")
     ("outputpath,o", po::value<std::string>(&c.outputpath)->default_value(""), "output path for clusterized samples")
     ("simulation,s", po::bool_switch(&c.simulation), "Simulated input?")
     // ("clusteralg,c", po::value<std::string>(&c.clusterAlg)->default_value("b"), "clustering algorithm: b for Boole or m for Maxs")
@@ -214,7 +213,7 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c){
   std::vector<double> zPositions = {0., 247.0*1000, 469.0*1000}; // HD2, Slayer, CERN
 
   if(c.simulation){
-    data["simulation"] = parseCorrectedRootTree(inputTree, 1, 4, 128);
+    data["simulation"] = parseCorrectedRootTree(inputTree, 0, 15, 128);
   }
   else{
     data["cern"] = parseCorrectedRootTree(inputTree, 1, 2, 128);
