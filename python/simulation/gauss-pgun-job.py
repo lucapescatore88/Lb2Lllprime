@@ -64,35 +64,39 @@ def execute(pos="c", angle=0):
 
   posA = {
           "x" : 2689.75,
-          "y" : 2376.98
+          "y" : 2376.98,
+          "z" : 7864.01
          }
   posC = {
           "x": 2689.75,
           "y": 50,
+          "z": 7855.63
          }  
   
-  target_pos = {}  
+  hit_pos = {}  
   if pos == "a":
-      target_pos = posA
+      hit_pos = posA
   elif pos == "c":
-      target_pos = posC
+      hit_pos = posC
   else:
       exit()
   
   # origin point
-  Delta_z = 20.
-  orig_z = 7854.8-Delta_z # 2 cm towards small z w.r.t. minimum mat z
-  orig_x = target_pos["x"] + Delta_z*tan(radians(angle))
-  orig_y = target_pos["y"]
+  orig_delta_z = 40. # origin is 4cm towards small z w.r.t. mat center 
+  orig_x = hit_pos["x"] + orig_delta_z*tan(radians(angle))
+  orig_y = hit_pos["y"]
+  orig_z = hit_pos["z"] - orig_delta_z 
+
 
   ParticleGun().MaterialEval.Xorig = orig_x
   ParticleGun().MaterialEval.Yorig = orig_y
   ParticleGun().MaterialEval.Zorig = orig_z
 
   # target point
-  target_x = target_pos["x"]
-  target_y = target_pos["y"]
-  target_z =  9439. #7870. #9439. #just shoot somewhere far, far away
+  target_delta_z = 1500.
+  target_x = hit_pos["x"] - target_delta_z*tan(radians(angle))
+  target_y = hit_pos["y"]
+  target_z = hit_pos["z"] + target_delta_z  #9439. #7870. #9439. #just shoot somewhere far, far away
 
   ParticleGun().MaterialEval.ZPlane = target_z
   ParticleGun().MaterialEval.Xmin = target_x - 1.7
