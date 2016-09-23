@@ -7,8 +7,8 @@ from glob import glob
 parser = argparse.ArgumentParser(description='Plot cluster properties from data and simulation.')
 parser.add_argument('-f', '--files', type=str, help="Path and name of the input .sim file, the * can be used as in /home/files/njob*/file.sim",
                     default="/afs/cern.ch/work/j/jwishahi/public/forViolaine/20160615_testbeam_ttekampe/1/*/output/testbeam_simulation_position*.sim")
-parser.add_argument('-i', '--interactive', type = "store_true", default=False)
-parser.add_argument('-s', '--storeTestbeam', type = "store_true", default=False)
+parser.add_argument('-i', '--interactive', action = "store_true", default=False)
+parser.add_argument('-s', '--storeTestbeam', action = "store_true", default=False)
 parser.add_argument('-n', '--nickname', type=str, default="")
 parser.add_argument('-r', '--resultPath', type=str, default="")
 parser.add_argument('-d', '--DDDBtag', type=str, default='dddb-20160304')
@@ -132,7 +132,7 @@ hist.dump()
 
 resultPath = cfg.resultPath
 
-fileName = (files[0].split("/")[-1]).replace(".sim", "_{0}.root".format(cfg.tag))
+fileName = (files[0].split("/")[-1]).replace(".sim", "_{0}.root".format(cfg.nickname))
 
 print("Outputfile: " + fileName)
 
@@ -170,16 +170,12 @@ while True:
   digits = evt['/Event/MC/FT/Digits'].containedObjects()
   for digit in digits:
     channel = digit.channelID()
-    if channel.sipmId() in sipmIDs and channel.module() == 1 and channel.quarter() == 3:
+    if channel.layer() in layers and channel.sipmId() in sipmIDs and channel.module() == 1 and channel.quarter() == 3:
       sipmValPtr[channel.layer()][channel.sipmId()][channel.sipmCell()][0] = digit.adcCount() / sipm_gain
 
   for t in outputTrees:
     t.Fill()
   resetSipmVals(sipmValPtr)
-
-  #i+=1
-  #if i>20:
-  #  break
 
 outputFile.cd()
 for t in outputTrees:
