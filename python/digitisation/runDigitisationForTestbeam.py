@@ -79,6 +79,12 @@ att.FractionShort = 0.234 # 0.18
 att.XMaxIrradiatedZone = 999999999999.#2000
 att.YMaxIrradiatedZone = -1.#500
 
+from Configurables import MCFTDepositDistributionTool
+
+distributiontool = MCFTDepositDistributionTool()
+distributiontool.WidthOfPhotonDistribution = 0.05
+
+
 from Configurables import MCFTDepositCreator
 #Defines Boole version (True = improved, False = standard)
 
@@ -87,6 +93,7 @@ MCFTDepositCreator().UsePathFracInFibre = True
 MCFTDepositCreator().DistributeInFibres = True
 
 MCFTDepositCreator().addTool(att)
+MCFTDepositCreator().addTool(distributiontool)
 MCFTDepositCreator().SpillVector = ["/"]
 MCFTDepositCreator().SpillTimes = [0.0]
 MCFTDepositCreator().UseAttenuation = True
