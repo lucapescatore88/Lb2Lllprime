@@ -176,7 +176,6 @@ for layerNumber in layers:
       outputTrees[-1].Branch("Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1), sipmValPtr_thisLayer[sipmID][adcChan] ,"Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1) + "/F")
   sipmValPtr.append(sipmValPtr_thisLayer)
 
-
 #i = 0
 nHits = 0
 while True:
