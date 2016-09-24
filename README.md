@@ -35,16 +35,10 @@ Available options for `clusterAnalysis` are:
 --tag, -t : tag that is added to the output file name, default_value("")
 ```
 
-Compare the clusters of testbeam data and simulation with `PlotCompareTrees.py` in the `\python` directory:
+Compare the clusters of testbeam data and simulation with `PlotCompareTrees.py` in the `\python\analysis\` directory:
 ```
-python PlotCompareTrees.py -ou <outputShortName> -d <outputRepository> -i1 <inputDataFile> -i2 <inputSimulationFile>
--t <decayTreeName> -ob <observable> -b <rangeBeginning> -e <rangeEnd> -n <numberOfBins> -ti <title>
+python PlotCompareTestbeamSimulation.py -ni <nicknameName> -d <outputDirectory> -i1 <inputTestbeamDataFile> -i2 <inputSimulationFile>
+-t <decayTreeName>
 ```
 
-Example:
-```
-python PlotCompareTrees.py -ou 'compareV2016_09_07' -d '/afs/cern.ch/work/v/vibellee/public/SciFiWorkshop/' 
--i1 '/afs/cern.ch/work/v/vibellee/BooleDebugging/testbeam_simulation_position_a__clusterAnalyis.root'
--i2 '/afs/cern.ch/work/v/vibellee/BooleDebugging/testbeam_simulation_position_c__clusterAnalyis.root'
--t clusterAnalysis -ob clusterSize -b 1 -e 5 -n 4 -ti "Cluster Size"
-```
+
