@@ -100,7 +100,6 @@ if __name__ == '__main__':
     tree2.AddFile(args.inputfile2)
 
     for feature, properties in features_and_properties.iteritems():
-        print "Feature is {0} and properties are {1}, {2}, {3}".format(feature, properties[0], properties[1], properties[2])
         observable = feature
         title = properties[0]
         beginning = properties[1]
