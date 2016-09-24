@@ -18,9 +18,19 @@ cfg = parser.parse_args()
 
 import GaudiPython as GP
 from GaudiConf import IOHelper
+from Gaudi.Configuration import *
 from Configurables import LHCbApp, ApplicationMgr, DataOnDemandSvc
 from Configurables import SimConf, DigiConf, DecodeRawEvent
 from Configurables import CondDB, DDDBConf
+
+
+# ROOT persistency for histograms
+importOptions('$STDOPTS/RootHist.opts')
+from Configurables import RootHistCnv__PersSvc
+RootHistCnv__PersSvc('RootHistCnv').ForceAlphaIds = True
+# should be provided by the user script, otherwise big confusion between Gaudi and ROOT
+#RootHistSvc('RootHistSvc').OutputFile = 'histo.root'
+HistogramPersistencySvc().OutputFile = 'histo.root'
 
 import array
 
@@ -36,6 +46,7 @@ def resetSipmVals(sipimValPtr):
         adcChan[0] = 0
 
 LHCbApp().Simulation = True
+#LHCbApp().Histograms = 'Default'
 CondDB().Upgrade = True
 
 LHCbApp().DDDBtag = cfg.DDDBtag
@@ -60,6 +71,7 @@ appConf.TopAlg += [
 ######################################
 #Configure Boole
 ######################################
+
 
 
 from Configurables import SiPMResponse
@@ -92,12 +104,14 @@ MCFTDepositCreator().UseDistributionTool = True
 MCFTDepositCreator().UsePathFracInFibre = True
 MCFTDepositCreator().DistributeInFibres = True
 
+
 MCFTDepositCreator().addTool(att)
 MCFTDepositCreator().addTool(distributiontool)
 MCFTDepositCreator().SpillVector = ["/"]
 MCFTDepositCreator().SpillTimes = [0.0]
 MCFTDepositCreator().UseAttenuation = True
 MCFTDepositCreator().SimulateNoise = False
+MCFTDepositCreator().MakeIntermediatePlots = True
 tof = 25.4175840541
 
 MCFTDigitCreator().IntegrationOffset = [26 - tof, 28 - tof, 30 - tof]
