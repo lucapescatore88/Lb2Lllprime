@@ -30,8 +30,9 @@ Available options for `produceCorrectedFile` are:
 Available options for `clusterAnalysis` are:
 ```
 --file, -f : corrected test beam data file(s), wild cards like *.root are also supported
+--outputpath, -o : path to the output files
+--debugoutput, -d : boolean to get the debug output
 --simulation, -s : add this optiion if you are running on a simulated file
---clusteralg, -c : clustering algorithm: b for Boole or m for Maxs ,default_value("b")
 --tag, -t : tag that is added to the output file name, default_value("")
 ```
 
