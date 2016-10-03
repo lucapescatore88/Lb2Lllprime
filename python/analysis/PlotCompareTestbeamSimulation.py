@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #Author : BELLEE Violaine
 #Date : 2015/04/22                                                                                                                                           
-#Used to give nice appearance to the root histos created by GenerateCompareSignal.sh     
+#Used to compare cluster observables between boole simulation and testbeam data
 
 import argparse
 import ROOT
@@ -15,6 +15,7 @@ def draw_compare_plot(outputdirectory, outputname, tree1, tree2, observable, tit
     histo1.SetLineWidth(2)
     histo1.SetStats(False)
     histo1.SetMarkerStyle(20)
+    histo1.SetMarkerColor(2)
     histo1.Sumw2()
     histo1.SetOption("E")
 
@@ -23,12 +24,13 @@ def draw_compare_plot(outputdirectory, outputname, tree1, tree2, observable, tit
     histo2.SetLineWidth(2)
     histo2.SetStats(False)
     histo2.SetMarkerStyle(20)
+    histo2.SetMarkerColor(4)
     histo2.Sumw2()
     histo2.SetOption("E")
 
     tree1.Draw(observable+'>>histo1',)
     tree2.Draw(observable+'>>histo2',)
-    leg = ROOT.TLegend(0.75,0.7,0.95,0.89)
+    leg = ROOT.TLegend(0.6,0.7,0.95,0.89)
     leg.AddEntry(histo1,"Testbeam","l")
     leg.AddEntry(histo2,"Simulation","l")
 
