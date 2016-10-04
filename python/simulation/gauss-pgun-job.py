@@ -8,7 +8,7 @@ from math import tan, radians
 
 from Gauss.Configuration import *
 #from Gaudi.Configuration import *
-from Configurables import Gauss, LHCbApp
+from Configurables import Gauss, LHCbApp, CondDB
 import GaudiKernel.SystemOfUnits as units
 
 local_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -36,6 +36,7 @@ def execute(pos="c", angle=0):
 
   LHCbApp().DDDBtag = "dddb-20160304"
   LHCbApp().CondDBtag = "sim-20150716-vc-md100"
+  CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
 
   importOptions('$LBPGUNSROOT/options/PGuns.py')
   from Configurables import ParticleGun
@@ -52,25 +53,24 @@ def execute(pos="c", angle=0):
 #position c: 30.5 cm (near sipm) ~ 5 cm distance from sipm
 #default y table position: 72.4 cm
 
-  # The target is FTChannelID 160, which is the gross cell ID 33 (cell ID 32) 
-  # of SiPM 1 in layer 0, module 0, mat 0. The local and global coordinates are:
+  # The target is channelID 35 
+  # of SiPM 1 in station 1, layer 0, quarter 3, module 0. The local and global coordinates are:
   # Position A (near mirror)
-  #   local  = (-219.75,-1213.5+50,0)
-  #   global = (2689.75,   50.00, 7855.63)
+  #   local  = (-219.8, -1213.5+50, 0)
+  #   global = (484.3, 49.378, 7783.242)
   # Position C (near SiPM)
-  #   local  = (-219.75,1213.5-50,0)
-  #   global = (2689.75, 2376.98, 7864.01)   
-  # The minimum z of the mat should be 7854.8 mm.
+  #   local  = (-219.75, 1213.5-50, 0)
+  #   global = (484.3, 2376.362, 7791.622)   
   
   posA = {
-          "x": 2689.75,
-          "y": 50,
-          "z": 7855.63
+          "x": 484.3,
+          "y": 49.378,
+          "z": 7783.242
          }  
   posC = {
-          "x" : 2689.75,
-          "y" : 2376.98,
-          "z" : 7864.01
+          "x" : 484.3,
+          "y" : 2376.362,
+          "z" : 7791.622
          }
 
   
@@ -120,11 +120,11 @@ def execute(pos="c", angle=0):
   GaussGen.FirstEventNumber = 1
   GaussGen.RunNumber = 1082
 
-  LHCbApp().EvtMax = 2000
+  LHCbApp().EvtMax = 20
 
   HistogramPersistencySvc().OutputFile = outpath+'-GaussHistos.root'
 
   OutputStream("GaussTape").Output = "DATAFILE='PFN:%s.sim' TYP='POOL_ROOTTREE' OPT='RECREATE'"%outpath
 
-#execute("a",20)
+execute("a",0)
 

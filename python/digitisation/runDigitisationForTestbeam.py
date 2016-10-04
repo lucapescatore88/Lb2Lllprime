@@ -48,10 +48,13 @@ def resetSipmVals(sipimValPtr):
 LHCbApp().Simulation = True
 #LHCbApp().Histograms = 'Default'
 CondDB().Upgrade = True
+## New numbering scheme. Remove when FT60 is in nominal CondDB.
+#CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60.db", dbName = "DDDB")
+CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
+
 
 LHCbApp().DDDBtag = cfg.DDDBtag
 LHCbApp().CondDBtag = cfg.CondDBtag
-
 
 # Configure all the unpacking, algorithms, tags and input files
 appConf = ApplicationMgr()
@@ -79,7 +82,7 @@ SiPMResponse().useNewResponse = 2#Use flat SiPM time response
 
 
 from Configurables import MCFTDigitCreator
-MCFTDigitCreator().Force2bitADC = 0
+#MCFTDigitCreator().Force2bitADC = 0
 
 from Configurables import MCFTAttenuationTool
 att = MCFTAttenuationTool()
@@ -94,15 +97,16 @@ att.YMaxIrradiatedZone = -1.#500
 from Configurables import MCFTDepositDistributionTool
 
 distributiontool = MCFTDepositDistributionTool()
-distributiontool.WidthOfPhotonDistribution = 0.125
+#distributiontool.WidthOfPhotonDistribution = 0.125
+distributiontool.GaussianSharingWidth = 0.125
 
 
 from Configurables import MCFTDepositCreator
 #Defines Boole version (True = improved, False = standard)
 
-MCFTDepositCreator().UseDistributionTool = True
-MCFTDepositCreator().UsePathFracInFibre = True
-MCFTDepositCreator().DistributeInFibres = True
+#MCFTDepositCreator().UseDistributionTool = True
+#MCFTDepositCreator().UsePathFracInFibre = True
+#MCFTDepositCreator().DistributeInFibres = True
 
 
 MCFTDepositCreator().addTool(att)
@@ -111,11 +115,11 @@ MCFTDepositCreator().SpillVector = ["/"]
 MCFTDepositCreator().SpillTimes = [0.0]
 MCFTDepositCreator().UseAttenuation = True
 MCFTDepositCreator().SimulateNoise = False
-MCFTDepositCreator().MakeIntermediatePlots = True
+#MCFTDepositCreator().MakeIntermediatePlots = True
 tof = 25.4175840541
 
 MCFTDigitCreator().IntegrationOffset = [26 - tof, 28 - tof, 30 - tof]
-MCFTDigitCreator().SiPMGain = sipm_gain = 1000.
+#MCFTDigitCreator().SiPMGain = sipm_gain = 1000.
 
 
 
@@ -186,12 +190,16 @@ while True:
     break
 
   nHits += len(evt["MC/FT/Hits"])
+  print 'saw {0} hits'.format(len(evt["MC/FT/Hits"]))
 
   digits = evt['/Event/MC/FT/Digits'].containedObjects()
+  print 'saw {0} digits'.format(len(evt['/Event/MC/FT/Digits'].containedObjects()))
+  
   for digit in digits:
+    print 'Saw one digit'
     channel = digit.channelID()
-    if channel.layer() in layers and channel.sipmId() in sipmIDs and channel.module() == 0 and channel.quarter() == 3:
-      sipmValPtr[channel.layer()][channel.sipmId()][channel.sipmCell()][0] = digit.adcCount() / sipm_gain
+    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 0 and channel.quarter() == 3 and channel.station() == 1:
+      sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.adcCount() / sipm_gain
 
   for t in outputTrees:
     t.Fill()
