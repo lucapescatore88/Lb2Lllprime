@@ -47,8 +47,8 @@ mat_id = 0
 #fibremodule = fibremodules[0]
 #print fibremodule
 
-target_channel = gbl.LHCb.FTChannelID(station_id, layer_id, quarter_id, module_id, 0, 0)
-fibremodule = FT.findModule(target_channel)
+channel_in_target_module = gbl.LHCb.FTChannelID(station_id, layer_id, quarter_id, module_id, 0, 0)
+fibremodule = FT.findModule(channel_in_target_module)
 
 points = {
            "A": point_A,
@@ -77,7 +77,7 @@ for pos_name, pos_point in points.iteritems():
     hit.setDisplacement(disp)
     
     fraction = ROOT.Double(0.0) # needed fro pass-by-ref of doubles
-    channel = fibremodule.calculateChannelAndFrac(hit_point_local.x(), fraction) 
+    channel = fibremodule.calculateChannelAndFrac(point.x(), fraction) 
 
     print "Hit position = ",hit.entry().x(), hit.entry().y(),hit.entry().z()
     print "Hit channel:"
