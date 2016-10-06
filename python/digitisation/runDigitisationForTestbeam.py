@@ -19,10 +19,12 @@ cfg = parser.parse_args()
 import GaudiPython as GP
 from GaudiConf import IOHelper
 from Gaudi.Configuration import *
-from Configurables import LHCbApp, ApplicationMgr, DataOnDemandSvc
+from Configurables import LHCbApp, ApplicationMgr, DataOnDemandSvc, Boole
 from Configurables import SimConf, DigiConf, DecodeRawEvent
 from Configurables import CondDB, DDDBConf
 
+#Temporary
+#Boole().DataType   = "Upgrade"
 
 # ROOT persistency for histograms
 importOptions('$STDOPTS/RootHist.opts')
@@ -123,6 +125,23 @@ MCFTDigitCreator().IntegrationOffset = [26 - tof, 28 - tof, 30 - tof]
 
 
 
+#temporary
+#from Configurables import GaudiSequencer, MCFTDepositCreator, MCFTDigitCreator, FTClusterCreator
+#MCFTDepositCreator().UseAttenuation = False
+#MCFTDepositCreator().OutputLevel = 2
+#MCFTDigitCreator().OutputLevel = 2
+#FTClusterCreator().OutputLevel = 2
+
+#from Configurables import MCFTDepositMonitor, MCFTDigitMonitor, FTClusterMonitor
+#MCFTDepositMonitor().OutputLevel = 2
+#MCFTDigitMonitor().OutputLevel = 2
+#FTClusterMonitor().OutputLevel = 2
+
+#from Configurables import FTRawBankEncoder, FTRawBankDecoder
+#FTRawBankDecoder().OutputLevel = 2
+#FTRawBankEncoder().OutputLevel = 2
+
+
 
 s = SimConf()
 SimConf().Detectors = ['VP', 'UT', 'FT', 'Rich1Pmt', 'Rich2Pmt', 'Ecal', 'Hcal', 'Muon']
@@ -198,8 +217,10 @@ while True:
   for digit in digits:
     print 'Saw one digit'
     channel = digit.channelID()
-    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 0 and channel.quarter() == 3 and channel.station() == 1:
-      sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.adcCount() / sipm_gain
+#    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 0 and channel.quarter() == 3 and channel.station() == 1:
+    if channel.layer() in layers and channel.sipm() in sipmIDs :
+#    sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.adcCount() / sipm_gain
+      sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.adcCount() / 1.0
 
   for t in outputTrees:
     t.Fill()

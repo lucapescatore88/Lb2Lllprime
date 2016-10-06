@@ -37,6 +37,7 @@ def execute(pos="c", angle=0):
   LHCbApp().DDDBtag = "dddb-20160304"
   LHCbApp().CondDBtag = "sim-20150716-vc-md100"
   CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
+#  CondDB().addLayer(dbFile = "/project/bfys/jtilburg/DDDB_FT60.db", dbName = "DDDB")
 
   importOptions('$LBPGUNSROOT/options/PGuns.py')
   from Configurables import ParticleGun
