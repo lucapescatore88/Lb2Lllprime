@@ -51,7 +51,6 @@ LHCbApp().Simulation = True
 #LHCbApp().Histograms = 'Default'
 CondDB().Upgrade = True
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
-#CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60.db", dbName = "DDDB")
 CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
 
 
@@ -83,9 +82,6 @@ from Configurables import SiPMResponse
 SiPMResponse().useNewResponse = 2#Use flat SiPM time response 
 
 
-from Configurables import MCFTDigitCreator
-#MCFTDigitCreator().Force2bitADC = 0
-
 from Configurables import MCFTAttenuationTool
 att = MCFTAttenuationTool()
 #att.ShortAttenuationLength = 491.7 # 200mm
@@ -99,48 +95,29 @@ att.YMaxIrradiatedZone = -1.#500
 from Configurables import MCFTDepositDistributionTool
 
 distributiontool = MCFTDepositDistributionTool()
-#distributiontool.WidthOfPhotonDistribution = 0.125
+distributiontool.MinFractionForSignalDeposit = 0.005
+distributiontool.ImprovedDigitisation = True
+distributiontool.NumOfNeighbouringChannels = 3
+distributiontool.LightSharing = "Gaussian"
 distributiontool.GaussianSharingWidth = 0.125
+#Options if old light sharing is used
+distributiontool.OldLightSharingCentral = 0.68
+distributiontool.OldLightSharingEdge = 0.5
 
 
 from Configurables import MCFTDepositCreator
-#Defines Boole version (True = improved, False = standard)
 
-#MCFTDepositCreator().UseDistributionTool = True
-#MCFTDepositCreator().UsePathFracInFibre = True
-#MCFTDepositCreator().DistributeInFibres = True
-
-
-MCFTDepositCreator().addTool(att)
-MCFTDepositCreator().addTool(distributiontool)
 MCFTDepositCreator().SpillVector = ["/"]
 MCFTDepositCreator().SpillTimes = [0.0]
+MCFTDepositCreator().addTool(att)
+MCFTDepositCreator().addTool(distributiontool)
 MCFTDepositCreator().UseAttenuation = True
 MCFTDepositCreator().SimulateNoise = False
-#MCFTDepositCreator().MakeIntermediatePlots = True
+MCFTDepositCreator().PhotonsPerMeV = 120.
+
+from Configurables import MCFTDigitCreator
 tof = 25.4175840541
-
 MCFTDigitCreator().IntegrationOffset = [26 - tof, 28 - tof, 30 - tof]
-#MCFTDigitCreator().SiPMGain = sipm_gain = 1000.
-
-
-
-#temporary
-#from Configurables import GaudiSequencer, MCFTDepositCreator, MCFTDigitCreator, FTClusterCreator
-#MCFTDepositCreator().UseAttenuation = False
-#MCFTDepositCreator().OutputLevel = 2
-#MCFTDigitCreator().OutputLevel = 2
-#FTClusterCreator().OutputLevel = 2
-
-#from Configurables import MCFTDepositMonitor, MCFTDigitMonitor, FTClusterMonitor
-#MCFTDepositMonitor().OutputLevel = 2
-#MCFTDigitMonitor().OutputLevel = 2
-#FTClusterMonitor().OutputLevel = 2
-
-#from Configurables import FTRawBankEncoder, FTRawBankDecoder
-#FTRawBankDecoder().OutputLevel = 2
-#FTRawBankEncoder().OutputLevel = 2
-
 
 
 s = SimConf()
@@ -209,18 +186,14 @@ while True:
     break
 
   nHits += len(evt["MC/FT/Hits"])
-  print 'saw {0} hits'.format(len(evt["MC/FT/Hits"]))
 
   digits = evt['/Event/MC/FT/Digits'].containedObjects()
-  print 'saw {0} digits'.format(len(evt['/Event/MC/FT/Digits'].containedObjects()))
   
   for digit in digits:
-    print 'Saw one digit'
     channel = digit.channelID()
 #    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 0 and channel.quarter() == 3 and channel.station() == 1:
     if channel.layer() in layers and channel.sipm() in sipmIDs :
-#    sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.adcCount() / sipm_gain
-      sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.adcCount() / 1.0
+      sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.adcCount() 
 
   for t in outputTrees:
     t.Fill()
