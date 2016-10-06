@@ -79,7 +79,7 @@ SiPMResponse().useNewResponse = 2#Use flat SiPM time response
 
 
 from Configurables import MCFTDigitCreator
-MCFTDigitCreator().Force2bitADC = 0
+#MCFTDigitCreator().Force2bitADC = 0
 
 from Configurables import MCFTAttenuationTool
 att = MCFTAttenuationTool()
@@ -115,7 +115,7 @@ MCFTDepositCreator().MakeIntermediatePlots = True
 tof = 25.4175840541
 
 MCFTDigitCreator().IntegrationOffset = [26 - tof, 28 - tof, 30 - tof]
-MCFTDigitCreator().SiPMGain = sipm_gain = 1000.
+#MCFTDigitCreator().SiPMGain = sipm_gain = 1000.
 
 
 
@@ -191,7 +191,7 @@ while True:
   for digit in digits:
     channel = digit.channelID()
     if channel.layer() in layers and channel.sipmId() in sipmIDs and channel.module() == 0 and channel.quarter() == 3:
-      sipmValPtr[channel.layer()][channel.sipmId()][channel.sipmCell()][0] = digit.adcCount() / sipm_gain
+      sipmValPtr[channel.layer()][channel.sipmId()][channel.sipmCell()][0] = digit.adcCount()
 
   for t in outputTrees:
     t.Fill()
