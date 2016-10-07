@@ -191,7 +191,7 @@ while True:
   for digit in digits:
     channel = digit.channelID()
     if channel.layer() in layers and channel.sipmId() in sipmIDs and channel.module() == 0 and channel.quarter() == 3:
-      sipmValPtr[channel.layer()][channel.sipmId()][channel.sipmCell()][0] = digit.adcCount()
+      sipmValPtr[channel.layer()][channel.sipmId()][channel.sipmCell()][0] = digit.photoElectrons()
 
   for t in outputTrees:
     t.Fill()
