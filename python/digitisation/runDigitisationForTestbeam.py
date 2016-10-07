@@ -99,7 +99,8 @@ distributiontool.MinFractionForSignalDeposit = 0.005
 distributiontool.ImprovedDigitisation = True
 distributiontool.NumOfNeighbouringChannels = 3
 distributiontool.LightSharing = "Gaussian"
-distributiontool.GaussianSharingWidth = 0.125
+#distributiontool.GaussianSharingWidth = 0.125
+distributiontool.GaussianSharingWidth = 0.250
 #Options if old light sharing is used
 distributiontool.OldLightSharingCentral = 0.68
 distributiontool.OldLightSharingEdge = 0.5
@@ -192,8 +193,8 @@ while True:
   for digit in digits:
     channel = digit.channelID()
 #    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 0 and channel.quarter() == 3 and channel.station() == 1:
-    if channel.layer() in layers and channel.sipm() in sipmIDs :
-      sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.adcCount() 
+    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 0 and channel.quarter() == 3 and channel.station() == 1 :
+      sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.photoElectrons() 
 
   for t in outputTrees:
     t.Fill()
