@@ -99,7 +99,10 @@ distributiontool.MinFractionForSignalDeposit = 0.005
 distributiontool.ImprovedDigitisation = True
 distributiontool.NumOfNeighbouringChannels = 3
 distributiontool.LightSharing = "Gaussian"
-distributiontool.GaussianSharingWidth = 0.125
+distributiontool.GaussianSharingWidth = 0.5
+#The above option corresponds to the fraction of the channel width
+#covered by the gaussian distribution of photons at the end of the
+#fibre, it corresponds to a width of 125um.
 #Options if old light sharing is used
 distributiontool.OldLightSharingCentral = 0.68
 distributiontool.OldLightSharingEdge = 0.5
