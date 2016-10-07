@@ -99,8 +99,7 @@ distributiontool.MinFractionForSignalDeposit = 0.005
 distributiontool.ImprovedDigitisation = True
 distributiontool.NumOfNeighbouringChannels = 3
 distributiontool.LightSharing = "Gaussian"
-#distributiontool.GaussianSharingWidth = 0.125
-distributiontool.GaussianSharingWidth = 0.250
+distributiontool.GaussianSharingWidth = 0.125
 #Options if old light sharing is used
 distributiontool.OldLightSharingCentral = 0.68
 distributiontool.OldLightSharingEdge = 0.5
