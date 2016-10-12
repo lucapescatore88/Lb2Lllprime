@@ -18,18 +18,16 @@ LHCbApp().CondDBtag = "sim-20150716-vc-md100"
 
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
 #CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60.db", dbName = "DDDB")
-CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
-
-
+CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/databases/DDDB_FT60_noEndPlug.db", dbName = "DDDB")
 
 appMgr = AppMgr(outputlevel=4)
 det = appMgr.detSvc()
 FT = det['/dd/Structure/LHCb/AfterMagnetRegion/T/FT']
 
 # TestBeam Position A in local coordinates (near mirror)
-point_A = gbl.Gaudi.XYZPoint(-219.75-0.05,-1213.5+50,0)
+point_A = gbl.Gaudi.XYZPoint(-219.75-0.05,-1200.0+50,0)
 # TestBeam Position C in lcoal coordinates (near SiPMs)
-point_C = gbl.Gaudi.XYZPoint(-219.75-0.05,+1213.5-50,0)
+point_C = gbl.Gaudi.XYZPoint(-219.75-0.05,+1200.0-50,0)
 
 # Choose station, layer, quarter, module, mat
 station_id = 1  # first station
