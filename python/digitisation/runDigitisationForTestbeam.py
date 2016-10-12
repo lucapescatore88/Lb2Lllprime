@@ -31,7 +31,7 @@ importOptions('$STDOPTS/RootHist.opts')
 from Configurables import RootHistCnv__PersSvc
 RootHistCnv__PersSvc('RootHistCnv').ForceAlphaIds = True
 # should be provided by the user script, otherwise big confusion between Gaudi and ROOT
-#RootHistSvc('RootHistSvc').OutputFile = 'histo.root'
+# RootHistSvc('RootHistSvc').OutputFile = 'histo.root'
 HistogramPersistencySvc().OutputFile = 'histo.root'
 
 import array
@@ -39,7 +39,6 @@ import array
 from LinkerInstances.eventassoc import *
 
 import ROOT as R
-
 
 def resetSipmVals(sipimValPtr):
   for layer in sipimValPtr:
@@ -52,7 +51,6 @@ LHCbApp().Simulation = True
 CondDB().Upgrade = True
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
 CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
-
 
 LHCbApp().DDDBtag = cfg.DDDBtag
 LHCbApp().CondDBtag = cfg.CondDBtag
@@ -77,18 +75,16 @@ appConf.TopAlg += [
 ######################################
 
 
-
 from Configurables import SiPMResponse
 SiPMResponse().useNewResponse = 2#Use flat SiPM time response 
 
-
 from Configurables import MCFTAttenuationTool
 att = MCFTAttenuationTool()
-#att.ShortAttenuationLength = 491.7 # 200mm
-#att.LongAttenuationLength = 3526. # 4700mm
-att.FractionShort = 0.234 # 0.18
+att.ShortAttenuationLength = 682.5 # 200mm  # TestBeam: HD1 468.6, HD2 896.3
+att.LongAttenuationLength = 4796   # 4700mm  # TestBeam: HD1 4688, HD2 4904
+att.FractionShort = 0.34           # 0.18 # TestBeam: HD1 0.273, HD2 0.406
 
-#make sure I always hit uirradiated zone
+# Make sure I always hit unirradiated zone
 att.XMaxIrradiatedZone = 999999999999.#2000
 att.YMaxIrradiatedZone = -1.#500
 
@@ -191,10 +187,12 @@ while True:
   nHits += len(evt["MC/FT/Hits"])
 
   digits = evt['/Event/MC/FT/Digits'].containedObjects()
-  
+
+  for h in evt["MC/FT/Hits"] :
+      print(h.entry().z())
+
   for digit in digits:
     channel = digit.channelID()
-#    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 0 and channel.quarter() == 3 and channel.station() == 1:
     if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 0 and channel.quarter() == 3 and channel.station() == 1 :
       sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.photoElectrons() 
 
