@@ -66,6 +66,7 @@ appConf.ExtSvc+= [
                   ]
 appConf.TopAlg += [
                    "MCFTDepositCreator",
+                   "MCFTDepositMonitor",
                    "MCFTDigitCreator",
                    "FTClusterCreator",
                    #"FTNtupleMaker"
@@ -86,7 +87,8 @@ from Configurables import MCFTAttenuationTool
 att = MCFTAttenuationTool()
 #att.ShortAttenuationLength = 491.7 # 200mm
 #att.LongAttenuationLength = 3526. # 4700mm
-att.FractionShort = 0.234 # 0.18
+#att.FractionShort = 0.234 # 0.18
+att.FractionShort = 0.18 # 0.18
 
 #make sure I always hit uirradiated zone
 att.XMaxIrradiatedZone = 999999999999.#2000
@@ -99,6 +101,7 @@ distributiontool.MinFractionForSignalDeposit = 0.005
 distributiontool.ImprovedDigitisation = True
 distributiontool.NumOfNeighbouringChannels = 3
 distributiontool.LightSharing = "Gaussian"
+#distributiontool.GaussianSharingWidth = 0.5
 distributiontool.GaussianSharingWidth = 0.5
 #The above option corresponds to the fraction of the channel width
 #covered by the gaussian distribution of photons at the end of the
@@ -124,12 +127,14 @@ MCFTDigitCreator().IntegrationOffset = [26 - tof, 28 - tof, 30 - tof]
 
 
 s = SimConf()
-SimConf().Detectors = ['VP', 'UT', 'FT', 'Rich1Pmt', 'Rich2Pmt', 'Ecal', 'Hcal', 'Muon']
+#SimConf().Detectors = ['VP', 'UT', 'FT', 'Rich1Pmt', 'Rich2Pmt', 'Ecal', 'Hcal', 'Muon']
+SimConf().Detectors = ['VP', 'FT']
 SimConf().EnableUnpack = True
 SimConf().EnablePack = False
 
 d = DigiConf()
-DigiConf().Detectors = ['VP', 'UT', 'FT', 'Rich1Pmt', 'Rich2Pmt', 'Ecal', 'Hcal', 'Muon']
+#DigiConf().Detectors = ['VP', 'UT', 'FT', 'Rich1Pmt', 'Rich2Pmt', 'Ecal', 'Hcal', 'Muon']
+DigiConf().Detectors = ['VP', 'FT']
 DigiConf().EnableUnpack = True
 DigiConf().EnablePack = False
 
@@ -161,7 +166,6 @@ fileName = (files[0].split("/")[-1]).replace(".sim", "_{0}.root".format(cfg.nick
 print("Outputfile: " + fileName)
 
 outputFile = R.TFile(resultPath + fileName, "RECREATE")
-#IOHelper('ROOT').outputFiles(resultPath + "simulationResponse.root")
 layers = range(0,1)
 sipmIDs = range(0,16)
 sipmValPtr = []
@@ -179,6 +183,18 @@ for layerNumber in layers:
       outputTrees[-1].Branch("Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1), sipmValPtr_thisLayer[sipmID][adcChan] ,"Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1) + "/F")
   sipmValPtr.append(sipmValPtr_thisLayer)
 
+z_mc_hit = array.array("f", [0])
+y_mc_hit = array.array("f", [0])
+x_mc_hit = array.array("f", [0])
+
+#outputFileHits = R.TFile(resultPath + "MCHits.root", "RECREATE")
+
+#tree_hits = R.TTree('MCHits','MCHits')
+#tree_hits.Branch("z_mc_hit", z_mc_hit, "z_mc_hit/F")
+#tree_hits.Branch("y_mc_hit", y_mc_hit, "y_mc_hit/F")
+#tree_hits.Branch("x_mc_hit", x_mc_hit, "x_mc_hit/F")
+
+
 #i = 0
 nHits = 0
 while True:
@@ -189,13 +205,20 @@ while True:
     break
 
   nHits += len(evt["MC/FT/Hits"])
+#  hits = evt["MC/FT/Hits"]
+#  for hit in hits:
+#    print hit.entry().Z()
+#    z_mc_hit[0] = float(hit.entry().Z())
+#    y_mc_hit[0] = float(hit.entry().Y())
+#    x_mc_hit[0] = float(hit.entry().X())
+#    tree_hits.Fill()
 
   digits = evt['/Event/MC/FT/Digits'].containedObjects()
   
   for digit in digits:
     channel = digit.channelID()
 #    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 0 and channel.quarter() == 3 and channel.station() == 1:
-    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 0 and channel.quarter() == 3 and channel.station() == 1 :
+    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 :
       sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.photoElectrons() 
 
   for t in outputTrees:
@@ -206,5 +229,11 @@ outputFile.cd()
 for t in outputTrees:
   t.Write()
 outputFile.Close()
+
+#outputFileHits.cd()
+#tree_hits.Write()
+#outputFileHits.Close()
+
+
 
 print("number of hits found: {0}".format(nHits))

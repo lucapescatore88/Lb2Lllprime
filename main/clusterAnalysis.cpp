@@ -361,10 +361,15 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c){
     }
 
     double meanLightYield{0};
+    double numClus{0};//Temporary
     for(const auto& cl : clCreators["simulation"].getClusters()){
       meanLightYield += cl->GetSumOfAdcValues();
+      numClus += 1;
     }
     meanLightYield /= (double)clCreators["simulation"].getNumberOfClusters();
+    std::cout << "Number of clusters officially: "<< (double)clCreators["simulation"].getNumberOfClusters() << "\n";
+    std::cout << "Number of clusters in the loop: "<< (double)numClus << "\n";
+
 
     double stdDevLightYield{0};
     for(const auto& cl : clCreators["simulation"].getClusters()){
