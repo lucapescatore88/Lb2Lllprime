@@ -32,10 +32,10 @@ point_A = gbl.Gaudi.XYZPoint(-219.75-0.05,-1213.5+50,0)
 point_C = gbl.Gaudi.XYZPoint(-219.75-0.05,+1213.5-50,0)
 
 # Choose station, layer, quarter, module, mat
-station_id = 1
-layer_id = 0
-quarter_id = 3
-module_id = 0
+station_id = 1  # first station
+layer_id = 0    # first layer
+quarter_id = 3  # upper left quarter
+module_id = 4   # outer most module
 mat_id = 0
 
 #fibremodules = [fibremodule for fibremodule in FT.fibremodules() if (fibremodule.layer() is layer_id and fibremodule.quarter() is quarter_id and fibremodule.module() is module_id)]
