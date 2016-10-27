@@ -187,15 +187,21 @@ while True:
   nHits += len(evt["MC/FT/Hits"])
 
   digits = evt['/Event/MC/FT/Digits'].containedObjects()
-
-  for h in evt["MC/FT/Hits"] :
-      print(h.entry().z())
-
   for digit in digits:
+    
+    jump = False
+    hits = digit.deposit().mcHitVec()
+    for h in hits :
+        mother = h.mcParticle().mother()
+        if "NULL" not in mother.__str__() : 
+            jump = True
+            break
+        
+    if jump : continue 
     channel = digit.channelID()
-    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 0 and channel.quarter() == 3 and channel.station() == 1 :
-      sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.photoElectrons() 
-
+    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 :
+      sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.photoElectrons()
+ 
   for t in outputTrees:
     t.Fill()
   resetSipmVals(sipmValPtr)

@@ -22,6 +22,7 @@ from Gaudi.Configuration import *
 from Configurables import LHCbApp, ApplicationMgr, DataOnDemandSvc, Boole
 from Configurables import SimConf, DigiConf, DecodeRawEvent
 from Configurables import CondDB, DDDBConf
+#from Configurables import IncidentSvc 
 
 #Temporary
 #Boole().DataType   = "Upgrade"
@@ -77,14 +78,18 @@ appConf.TopAlg += [
 #Configure Boole
 ######################################
 
+
+
 from Configurables import SiPMResponse
 SiPMResponse().useNewResponse = 2#Use flat SiPM time response 
 
+
 from Configurables import MCFTAttenuationTool
 att = MCFTAttenuationTool()
-att.ShortAttenuationLength = {ShortAttLgh}
-att.LongAttenuationLength = {LongAttLgh}
-att.FractionShort = {ShortFraction}
+#att.ShortAttenuationLength = 682.5 # 200mm   # TestBeam: HD1 468.6, HD2 896.3
+#att.LongAttenuationLength = 4796   # 4700mm  # TestBeam: HD1 4688,  HD2 4904
+#att.FractionShort = 0.34           # 0.18    # TestBeam: HD1 0.273, HD2 0.406
+att.FractionShort = 0.18 # 0.18
 
 #make sure I always hit uirradiated zone
 att.XMaxIrradiatedZone = 999999999999.#2000
@@ -97,9 +102,15 @@ distributiontool.MinFractionForSignalDeposit = 0.005
 distributiontool.ImprovedDigitisation = True
 distributiontool.NumOfNeighbouringChannels = 3
 distributiontool.LightSharing = "Gaussian"
-distributiontool.GaussianSharingWidth = {PhotonWidth}
+distributiontool.GaussianSharingWidth = 0.4
+#distributiontool.GaussianSharingWidth = 0.5
+#The above option corresponds to the fraction of the channel width
+#covered by the gaussian distribution of photons at the end of the
+#fibre, it corresponds to a width of 125um.
+#Options if old light sharing is used
 distributiontool.OldLightSharingCentral = 0.68
 distributiontool.OldLightSharingEdge = 0.5
+
 
 from Configurables import MCFTDepositCreator
 
@@ -151,7 +162,9 @@ hist.dump()
 
 resultPath = cfg.resultPath
 
-fileName = (files[0].split("/")[-1]).replace(".sim", "_{{0}}.root".format(cfg.nickname))
+fileName = (files[0].split("/")[-1]).replace(".sim", "_{0}.root".format(cfg.nickname))
+
+print("Outputfile: " + fileName)
 
 outputFile = R.TFile(resultPath + fileName, "RECREATE")
 layers = range(0,1)
@@ -161,7 +174,7 @@ outputTrees = []
 outputFile.cd()
 for layerNumber in layers:
   outputTrees.append(R.TTree("layer_" + str(layerNumber), "layer_" + str(layerNumber) ) )
-  sipmValPtr_thisLayer = {{}}
+  sipmValPtr_thisLayer = {}
   for sipmID in sipmIDs:
     arr = []
     for sipmChan in xrange(128):
@@ -175,6 +188,15 @@ z_mc_hit = array.array("f", [0])
 y_mc_hit = array.array("f", [0])
 x_mc_hit = array.array("f", [0])
 
+#outputFileHits = R.TFile(resultPath + "MCHits.root", "RECREATE")
+
+#tree_hits = R.TTree('MCHits','MCHits')
+#tree_hits.Branch("z_mc_hit", z_mc_hit, "z_mc_hit/F")
+#tree_hits.Branch("y_mc_hit", y_mc_hit, "y_mc_hit/F")
+#tree_hits.Branch("x_mc_hit", x_mc_hit, "x_mc_hit/F")
+
+
+#i = 0
 nHits = 0
 while True:
   appMgr.run(1)
@@ -184,6 +206,13 @@ while True:
     break
 
   nHits += len(evt["MC/FT/Hits"])
+#  hits = evt["MC/FT/Hits"]
+#  for hit in hits:
+#    print hit.entry().Z()
+#    z_mc_hit[0] = float(hit.entry().Z())
+#    y_mc_hit[0] = float(hit.entry().Y())
+#    x_mc_hit[0] = float(hit.entry().X())
+#    tree_hits.Fill()
 
   digits = evt['/Event/MC/FT/Digits'].containedObjects()
   for digit in digits:
@@ -210,3 +239,10 @@ for t in outputTrees:
   t.Write()
 outputFile.Close()
 
+#outputFileHits.cd()
+#tree_hits.Write()
+#outputFileHits.Close()
+
+
+
+print("number of hits found: {0}".format(nHits))
