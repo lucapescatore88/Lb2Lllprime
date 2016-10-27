@@ -16,10 +16,14 @@ doprint = False
 
 send = False
 mail = "pluca@cern.ch"
+plot = False
 
 if len(sys.argv) < 3 : sys.exit()
 outdir = sys.argv[1]
 digi_script = sys.argv[2]
+if len(sys.argv) == 4 :
+    if sys.argv[3] == "--plot" :
+        plot = True
 
 import job_config as jc
 repo = os.environ["SCIFITESTBEAMSIMROOT"]
@@ -35,7 +39,7 @@ digi_cmd = 'cd '+jc.boole+' && mkdir -p {outdir} && ./run python {script} -f {f}
 #digi_cmd = 'cd '+jc.boole+' && mkdir -p {outdir} && ./run python {script} -f {f} -r {outdir}  && cd - &> setuplog'
 cluster_cmd = 'source SetupProject.sh DaVinci &> setuplog && mkdir -p {outdir} && {script} -f {f} -s 1 -o {outdir} &> clusterlog '
 compare_cmd = 'source SetupProject.sh root &> setuplog && mkdir -p {outdir} && python {script} -d {outdir} -g4f {g4f} -testbf {tbf} -simf {simf}'
-compare_cmd += ' --noplot'
+if not plot : compare_cmd += ' --noplot'
 compare_cmd += ' &> comparelog'
 
 ## Start program
