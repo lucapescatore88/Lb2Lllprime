@@ -18,24 +18,22 @@ LHCbApp().CondDBtag = "sim-20150716-vc-md100"
 
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
 #CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60.db", dbName = "DDDB")
-CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
-
-
+CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/databases/DDDB_FT60_noEndPlug.db", dbName = "DDDB")
 
 appMgr = AppMgr(outputlevel=4)
 det = appMgr.detSvc()
 FT = det['/dd/Structure/LHCb/AfterMagnetRegion/T/FT']
 
 # TestBeam Position A in local coordinates (near mirror)
-point_A = gbl.Gaudi.XYZPoint(-219.75-0.05,-1213.5+50,0)
+point_A = gbl.Gaudi.XYZPoint(-219.75-0.05,-1200.0+50,0)
 # TestBeam Position C in lcoal coordinates (near SiPMs)
-point_C = gbl.Gaudi.XYZPoint(-219.75-0.05,+1213.5-50,0)
+point_C = gbl.Gaudi.XYZPoint(-219.75-0.05,+1200.0-50,0)
 
 # Choose station, layer, quarter, module, mat
-station_id = 1
-layer_id = 0
-quarter_id = 3
-module_id = 0
+station_id = 1  # first station
+layer_id = 0    # first layer
+quarter_id = 3  # upper left quarter
+module_id = 4   # outer most module
 mat_id = 0
 
 #fibremodules = [fibremodule for fibremodule in FT.fibremodules() if (fibremodule.layer() is layer_id and fibremodule.quarter() is quarter_id and fibremodule.module() is module_id)]
@@ -47,8 +45,8 @@ mat_id = 0
 #fibremodule = fibremodules[0]
 #print fibremodule
 
-target_channel = gbl.LHCb.FTChannelID(station_id, layer_id, quarter_id, module_id, 0, 0)
-fibremodule = FT.findModule(target_channel)
+channel_in_target_module = gbl.LHCb.FTChannelID(station_id, layer_id, quarter_id, module_id, 0, 0)
+fibremodule = FT.findModule(channel_in_target_module)
 
 points = {
            "A": point_A,
@@ -77,7 +75,7 @@ for pos_name, pos_point in points.iteritems():
     hit.setDisplacement(disp)
     
     fraction = ROOT.Double(0.0) # needed fro pass-by-ref of doubles
-    channel = fibremodule.calculateChannelAndFrac(hit_point_local.x(), fraction) 
+    channel = fibremodule.calculateChannelAndFrac(point.x(), fraction) 
 
     print "Hit position = ",hit.entry().x(), hit.entry().y(),hit.entry().z()
     print "Hit channel:"
