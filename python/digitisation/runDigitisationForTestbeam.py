@@ -51,7 +51,7 @@ LHCbApp().Simulation = True
 #LHCbApp().Histograms = 'Default'
 CondDB().Upgrade = True
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
-CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
+CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60.db", dbName = "DDDB")
 
 
 LHCbApp().DDDBtag = cfg.DDDBtag
