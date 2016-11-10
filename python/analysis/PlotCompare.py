@@ -27,8 +27,9 @@ def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_obse
     leg = ROOT.TLegend(0.6,0.7,0.95,0.89)
     for i,t in enumerate(trees) :
         name = t[0].replace(" ","")
-        if("Geant" not in t[0]) : t[1].Draw(observable+'>>'+name,)
-        else : t[1].Draw(geant_observable+'>>'+name,)
+        if "Geant" in t[0] : t[1].Draw(geant_observable+'>>'+name)
+        elif "Beam" in t[0] : t[1].Draw(observable+'>>'+name,"distance_from_track<300&&distance_from_track>-300")
+        else : t[1].Draw(observable+'>>'+name)
         leg.AddEntry(histos[name],t[0],"l")
 
     chi2ndf = -1

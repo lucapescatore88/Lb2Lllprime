@@ -50,7 +50,9 @@ LHCbApp().Simulation = True
 #LHCbApp().Histograms = 'Default'
 CondDB().Upgrade = True
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
-CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
+#CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
+#CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT61.db", dbName = "DDDB")
+CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60.db", dbName = "DDDB")
 
 LHCbApp().DDDBtag = cfg.DDDBtag
 LHCbApp().CondDBtag = cfg.CondDBtag
@@ -175,7 +177,6 @@ for layerNumber in layers:
       outputTrees[-1].Branch("Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1), sipmValPtr_thisLayer[sipmID][adcChan] ,"Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1) + "/F")
   sipmValPtr.append(sipmValPtr_thisLayer)
 
-#i = 0
 nHits = 0
 while True:
   appMgr.run(1)

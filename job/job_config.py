@@ -18,11 +18,11 @@ if "lxplus" in host :
     
 ## Obligatory paths
 
-sample_to_compare = "G4" #"TestBeam" ## G4 or TestBeam
+sample_to_compare = "TestBeam" ## G4 or TestBeam
 
 outdir = "/panfs/pescator/SciFiSim/optimise/"
 if "lxplus" in host :
-    outdir = work + "/SciFiSim/optimise/4D_G4/"
+    outdir = work + "/SciFiSim/optimise/4D_TestBeam"
 #     outdir = work + "/SciFiSim/optimise/BFGS/"
 
 #Frameworks locations

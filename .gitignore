@@ -1,2 +1,3 @@
 build*
 *.pyc
+job/job_config.py

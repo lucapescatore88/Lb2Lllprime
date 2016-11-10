@@ -3,6 +3,9 @@
 ## Description: Script to launch the digitisation to compaisons chain many times
 ## performing a grid search to find best parameters
 ## N.B.: Requires setting up the enviroment by source job/setup.sh
+## N.B.: Options such as output directory, data to compare, etc are set via job/job_options.py
+
+
 
 from param_config import configure_params
 import os, time, shutil, sys

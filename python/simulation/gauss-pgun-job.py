@@ -57,10 +57,10 @@ def execute(pos="c", angle=0):
   # The target is channelID 35 
   # of SiPM 1 in station 1, layer 0, quarter 3, module 0. The local and global coordinates are:
   # Position A (near mirror)
-  #   local  = (-219.8, -1213.5+50, 0)
+  #   local  = (-219.75-0.05,-1213.5+50, 0)
   #   global = (484.3, 49.378, 7783.242)
   # Position C (near SiPM)
-  #   local  = (-219.75, 1213.5-50, 0)
+  #   local  = (-219.75-0.05,-1213.5+50, 0)
   #   global = (484.3, 2376.362, 7791.622)   
   
   posA = {
