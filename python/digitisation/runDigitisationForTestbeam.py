@@ -66,6 +66,7 @@ appConf.ExtSvc+= [
                   ]
 appConf.TopAlg += [
                    "MCFTDepositCreator",
+                   "MCFTDepositMonitor",
                    "MCFTDigitCreator",
                    "FTClusterCreator",
                    #"FTNtupleMaker"
@@ -97,6 +98,7 @@ distributiontool.MinFractionForSignalDeposit = 0.005
 distributiontool.ImprovedDigitisation = True
 distributiontool.NumOfNeighbouringChannels = 3
 distributiontool.LightSharing = "Gaussian"
+#distributiontool.GaussianSharingWidth = 0.5
 distributiontool.GaussianSharingWidth = 0.5
 #The above option corresponds to the fraction of the channel width
 #covered by the gaussian distribution of photons at the end of the
@@ -122,12 +124,14 @@ MCFTDigitCreator().IntegrationOffset = [26 - tof, 28 - tof, 30 - tof]
 
 
 s = SimConf()
-SimConf().Detectors = ['VP', 'UT', 'FT', 'Rich1Pmt', 'Rich2Pmt', 'Ecal', 'Hcal', 'Muon']
+#SimConf().Detectors = ['VP', 'UT', 'FT', 'Rich1Pmt', 'Rich2Pmt', 'Ecal', 'Hcal', 'Muon']
+SimConf().Detectors = ['VP', 'FT']
 SimConf().EnableUnpack = True
 SimConf().EnablePack = False
 
 d = DigiConf()
-DigiConf().Detectors = ['VP', 'UT', 'FT', 'Rich1Pmt', 'Rich2Pmt', 'Ecal', 'Hcal', 'Muon']
+#DigiConf().Detectors = ['VP', 'UT', 'FT', 'Rich1Pmt', 'Rich2Pmt', 'Ecal', 'Hcal', 'Muon']
+DigiConf().Detectors = ['VP', 'FT']
 DigiConf().EnableUnpack = True
 DigiConf().EnablePack = False
 
@@ -159,7 +163,6 @@ fileName = (files[0].split("/")[-1]).replace(".sim", "_{0}.root".format(cfg.nick
 print("Outputfile: " + fileName)
 
 outputFile = R.TFile(resultPath + fileName, "RECREATE")
-#IOHelper('ROOT').outputFiles(resultPath + "simulationResponse.root")
 layers = range(0,1)
 sipmIDs = range(0,16)
 sipmValPtr = []
@@ -186,6 +189,13 @@ while True:
     break
 
   nHits += len(evt["MC/FT/Hits"])
+#  hits = evt["MC/FT/Hits"]
+#  for hit in hits:
+#    print hit.entry().Z()
+#    z_mc_hit[0] = float(hit.entry().Z())
+#    y_mc_hit[0] = float(hit.entry().Y())
+#    x_mc_hit[0] = float(hit.entry().X())
+#    tree_hits.Fill()
 
   digits = evt['/Event/MC/FT/Digits'].containedObjects()
   for digit in digits:
@@ -211,5 +221,11 @@ outputFile.cd()
 for t in outputTrees:
   t.Write()
 outputFile.Close()
+
+#outputFileHits.cd()
+#tree_hits.Write()
+#outputFileHits.Close()
+
+
 
 print("number of hits found: {0}".format(nHits))
