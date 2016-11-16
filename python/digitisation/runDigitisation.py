@@ -22,6 +22,7 @@ from Gaudi.Configuration import *
 from Configurables import LHCbApp, ApplicationMgr, DataOnDemandSvc, Boole
 from Configurables import SimConf, DigiConf, DecodeRawEvent
 from Configurables import CondDB, DDDBConf
+#from Configurables import IncidentSvc 
 
 #Temporary
 #Boole().DataType   = "Upgrade"
@@ -31,7 +32,7 @@ importOptions('$STDOPTS/RootHist.opts')
 from Configurables import RootHistCnv__PersSvc
 RootHistCnv__PersSvc('RootHistCnv').ForceAlphaIds = True
 # should be provided by the user script, otherwise big confusion between Gaudi and ROOT
-# RootHistSvc('RootHistSvc').OutputFile = 'histo.root'
+#RootHistSvc('RootHistSvc').OutputFile = 'histo.root'
 HistogramPersistencySvc().OutputFile = 'histo.root'
 
 import array
@@ -39,6 +40,7 @@ import array
 from LinkerInstances.eventassoc import *
 
 import ROOT as R
+
 
 def resetSipmVals(sipimValPtr):
   for layer in sipimValPtr:
@@ -50,7 +52,7 @@ LHCbApp().Simulation = True
 #LHCbApp().Histograms = 'Default'
 CondDB().Upgrade = True
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
-CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60_noEndPlug.db", dbName = "DDDB")
+CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
 
 
 LHCbApp().DDDBtag = cfg.DDDBtag
@@ -77,16 +79,19 @@ appConf.TopAlg += [
 ######################################
 
 
+
 from Configurables import SiPMResponse
 SiPMResponse().useNewResponse = 2#Use flat SiPM time response 
 
+
 from Configurables import MCFTAttenuationTool
 att = MCFTAttenuationTool()
-att.ShortAttenuationLength = 682.5 # 200mm  # TestBeam: HD1 468.6, HD2 896.3
-att.LongAttenuationLength = 4796   # 4700mm  # TestBeam: HD1 4688, HD2 4904
-att.FractionShort = 0.34           # 0.18 # TestBeam: HD1 0.273, HD2 0.406
+#att.ShortAttenuationLength = 682.5 # 200mm   # TestBeam: HD1 468.6, HD2 896.3
+#att.LongAttenuationLength = 4796   # 4700mm  # TestBeam: HD1 4688,  HD2 4904
+#att.FractionShort = 0.34           # 0.18    # TestBeam: HD1 0.273, HD2 0.406
+att.FractionShort = 0.18 # 0.18
 
-# Make sure I always hit unirradiated zone
+#make sure I always hit uirradiated zone
 att.XMaxIrradiatedZone = 999999999999.#2000
 att.YMaxIrradiatedZone = -1.#500
 
@@ -97,8 +102,8 @@ distributiontool.MinFractionForSignalDeposit = 0.005
 distributiontool.ImprovedDigitisation = True
 distributiontool.NumOfNeighbouringChannels = 3
 distributiontool.LightSharing = "Gaussian"
+distributiontool.GaussianSharingWidth = 0.4
 #distributiontool.GaussianSharingWidth = 0.5
-distributiontool.GaussianSharingWidth = 0.5
 #The above option corresponds to the fraction of the channel width
 #covered by the gaussian distribution of photons at the end of the
 #fibre, it corresponds to a width of 125um.
@@ -179,6 +184,19 @@ for layerNumber in layers:
       outputTrees[-1].Branch("Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1), sipmValPtr_thisLayer[sipmID][adcChan] ,"Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1) + "/F")
   sipmValPtr.append(sipmValPtr_thisLayer)
 
+z_mc_hit = array.array("f", [0])
+y_mc_hit = array.array("f", [0])
+x_mc_hit = array.array("f", [0])
+
+#outputFileHits = R.TFile(resultPath + "MCHits.root", "RECREATE")
+
+#tree_hits = R.TTree('MCHits','MCHits')
+#tree_hits.Branch("z_mc_hit", z_mc_hit, "z_mc_hit/F")
+#tree_hits.Branch("y_mc_hit", y_mc_hit, "y_mc_hit/F")
+#tree_hits.Branch("x_mc_hit", x_mc_hit, "x_mc_hit/F")
+
+
+#i = 0
 nHits = 0
 while True:
   appMgr.run(1)
@@ -211,7 +229,7 @@ while True:
     channel = digit.channelID()
     if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 :
       sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.photoElectrons()
- 
+  
   for t in outputTrees:
     t.Fill()
   resetSipmVals(sipmValPtr)

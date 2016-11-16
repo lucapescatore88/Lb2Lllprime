@@ -31,7 +31,7 @@ importOptions('$STDOPTS/RootHist.opts')
 from Configurables import RootHistCnv__PersSvc
 RootHistCnv__PersSvc('RootHistCnv').ForceAlphaIds = True
 # should be provided by the user script, otherwise big confusion between Gaudi and ROOT
-# RootHistSvc('RootHistSvc').OutputFile = 'histo.root'
+#RootHistSvc('RootHistSvc').OutputFile = 'histo.root'
 HistogramPersistencySvc().OutputFile = 'histo.root'
 
 import array
@@ -39,6 +39,7 @@ import array
 from LinkerInstances.eventassoc import *
 
 import ROOT as R
+
 
 def resetSipmVals(sipimValPtr):
   for layer in sipimValPtr:
@@ -50,7 +51,7 @@ LHCbApp().Simulation = True
 #LHCbApp().Histograms = 'Default'
 CondDB().Upgrade = True
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
-CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60_noEndPlug.db", dbName = "DDDB")
+CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
 
 
 LHCbApp().DDDBtag = cfg.DDDBtag
@@ -76,17 +77,16 @@ appConf.TopAlg += [
 #Configure Boole
 ######################################
 
-
 from Configurables import SiPMResponse
 SiPMResponse().useNewResponse = 2#Use flat SiPM time response 
 
 from Configurables import MCFTAttenuationTool
 att = MCFTAttenuationTool()
-att.ShortAttenuationLength = 682.5 # 200mm  # TestBeam: HD1 468.6, HD2 896.3
-att.LongAttenuationLength = 4796   # 4700mm  # TestBeam: HD1 4688, HD2 4904
-att.FractionShort = 0.34           # 0.18 # TestBeam: HD1 0.273, HD2 0.406
+att.ShortAttenuationLength = {ShortAttLgh}
+att.LongAttenuationLength = {LongAttLgh}
+att.FractionShort = {ShortFraction}
 
-# Make sure I always hit unirradiated zone
+#make sure I always hit uirradiated zone
 att.XMaxIrradiatedZone = 999999999999.#2000
 att.YMaxIrradiatedZone = -1.#500
 
@@ -97,15 +97,9 @@ distributiontool.MinFractionForSignalDeposit = 0.005
 distributiontool.ImprovedDigitisation = True
 distributiontool.NumOfNeighbouringChannels = 3
 distributiontool.LightSharing = "Gaussian"
-#distributiontool.GaussianSharingWidth = 0.5
-distributiontool.GaussianSharingWidth = 0.5
-#The above option corresponds to the fraction of the channel width
-#covered by the gaussian distribution of photons at the end of the
-#fibre, it corresponds to a width of 125um.
-#Options if old light sharing is used
+distributiontool.GaussianSharingWidth = {PhotonWidth}
 distributiontool.OldLightSharingCentral = 0.68
 distributiontool.OldLightSharingEdge = 0.5
-
 
 from Configurables import MCFTDepositCreator
 
@@ -157,9 +151,7 @@ hist.dump()
 
 resultPath = cfg.resultPath
 
-fileName = (files[0].split("/")[-1]).replace(".sim", "_{0}.root".format(cfg.nickname))
-
-print("Outputfile: " + fileName)
+fileName = (files[0].split("/")[-1]).replace(".sim", "_{{0}}.root".format(cfg.nickname))
 
 outputFile = R.TFile(resultPath + fileName, "RECREATE")
 layers = range(0,1)
@@ -169,7 +161,7 @@ outputTrees = []
 outputFile.cd()
 for layerNumber in layers:
   outputTrees.append(R.TTree("layer_" + str(layerNumber), "layer_" + str(layerNumber) ) )
-  sipmValPtr_thisLayer = {}
+  sipmValPtr_thisLayer = {{}}
   for sipmID in sipmIDs:
     arr = []
     for sipmChan in xrange(128):
@@ -178,6 +170,10 @@ for layerNumber in layers:
     for adcChan in xrange(128):
       outputTrees[-1].Branch("Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1), sipmValPtr_thisLayer[sipmID][adcChan] ,"Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1) + "/F")
   sipmValPtr.append(sipmValPtr_thisLayer)
+
+z_mc_hit = array.array("f", [0])
+y_mc_hit = array.array("f", [0])
+x_mc_hit = array.array("f", [0])
 
 nHits = 0
 while True:
@@ -188,13 +184,6 @@ while True:
     break
 
   nHits += len(evt["MC/FT/Hits"])
-#  hits = evt["MC/FT/Hits"]
-#  for hit in hits:
-#    print hit.entry().Z()
-#    z_mc_hit[0] = float(hit.entry().Z())
-#    y_mc_hit[0] = float(hit.entry().Y())
-#    x_mc_hit[0] = float(hit.entry().X())
-#    tree_hits.Fill()
 
   digits = evt['/Event/MC/FT/Digits'].containedObjects()
   for digit in digits:
@@ -211,7 +200,7 @@ while True:
     channel = digit.channelID()
     if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 :
       sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.photoElectrons()
- 
+  
   for t in outputTrees:
     t.Fill()
   resetSipmVals(sipmValPtr)
@@ -221,10 +210,3 @@ for t in outputTrees:
   t.Write()
 outputFile.Close()
 
-#outputFileHits.cd()
-#tree_hits.Write()
-#outputFileHits.Close()
-
-
-
-print("number of hits found: {0}".format(nHits))
