@@ -36,7 +36,7 @@ def execute(pos="c", angle=0):
 
   LHCbApp().DDDBtag = "dddb-20160304"
   LHCbApp().CondDBtag = "sim-20150716-vc-md100"
-  CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/databases/DDDB_FT60_noEndPlug.db", dbName = "DDDB")
+  CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60_noEndPlug.db", dbName = "DDDB")
 
   Gauss().DetectorGeo = { "Detectors": [ 'VP', 'FT' ] }
   Gauss().DetectorSim = { "Detectors": [ 'FT' ] }

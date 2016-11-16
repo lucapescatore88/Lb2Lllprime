@@ -18,7 +18,7 @@ LHCbApp().CondDBtag = "sim-20150716-vc-md100"
 
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
 #CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60.db", dbName = "DDDB")
-CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/databases/DDDB_FT60_noEndPlug.db", dbName = "DDDB")
+CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60_noEndPlug.db", dbName = "DDDB")
 
 appMgr = AppMgr(outputlevel=4)
 det = appMgr.detSvc()
