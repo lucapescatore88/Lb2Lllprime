@@ -22,12 +22,12 @@ sample_to_compare = "TestBeam" ## G4 or TestBeam
 
 outdir = "/panfs/pescator/SciFiSim/optimise/"
 if "lxplus" in host :
-    outdir = work + "/SciFiSim/optimise/4D_TestBeam"
+    outdir = work + "/SciFiSim/optimise/1D_CrossTalkProb"
 #     outdir = work + "/SciFiSim/optimise/BFGS/"
 
 #Frameworks locations
 gauss = cmtuser+'/GaussDev'
-boole = "~/cmtuser/BooleDev_v30r2/"
+boole = "/afs/cern.ch/work/p/pluca/SciFiDevelopment/BOOLE/BOOLE_v30r2/build.x86_64-slc6-gcc49-opt/"
 
 #Data to compare
 if "lxplus" in host :

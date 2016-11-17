@@ -35,12 +35,12 @@ compare_script = jc.repo+"/python/analysis/PlotCompare.py"
 
 #Commands to launch
 sim_cmd = 'cd '+jc.gauss+' && ./run gaudirun.py {script} &> simlog && mkdir -p {outdir} && cp *.sim {outdir} && cd -'
-digi_cmd = 'cd '+jc.boole+' && mkdir -p {outdir} && ./run python {script} -f {f} -r {outdir} &> digilog && cd - &> setuplog'
+digi_cmd = 'cd '+jc.boole+' && mkdir -p {outdir} && ./run python {script} -f {f} -r {outdir} &> {outdir}/digilog && cd - &> {outdir}/setuplog'
 #digi_cmd = 'cd '+jc.boole+' && mkdir -p {outdir} && ./run python {script} -f {f} -r {outdir}  && cd - &> setuplog'
-cluster_cmd = 'source SetupProject.sh DaVinci &> setuplog && mkdir -p {outdir} && {script} -f {f} -s 1 -o {outdir} &> clusterlog '
+cluster_cmd = 'source SetupProject.sh DaVinci &> setuplog && mkdir -p {outdir} && {script} -f {f} -s 1 -o {outdir} &> {outdir}/clusterlog '
 compare_cmd = 'source SetupProject.sh root &> setuplog && mkdir -p {outdir} && python {script} -d {outdir} -g4f {g4f} -testbf {tbf} -simf {simf}'
 if not plot : compare_cmd += ' --noplot'
-compare_cmd += ' &> comparelog'
+compare_cmd += ' &> {outdir}/comparelog'
 
 ## Start program
 
