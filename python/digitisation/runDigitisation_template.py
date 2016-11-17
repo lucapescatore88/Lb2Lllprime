@@ -51,7 +51,10 @@ LHCbApp().Simulation = True
 #LHCbApp().Histograms = 'Default'
 CondDB().Upgrade = True
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
-CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
+CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/databases/DDDB_FT60_noEndPlug.db", dbName = "DDDB")
+#CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT61.db", dbName = "DDDB")
+#CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60.db", dbName = "DDDB")
+
 
 
 LHCbApp().DDDBtag = cfg.DDDBtag
@@ -90,6 +93,10 @@ att.FractionShort = {ShortFraction}
 att.XMaxIrradiatedZone = 999999999999.#2000
 att.YMaxIrradiatedZone = -1.#500
 
+from Configurables import MCFTDepositPathFracInFibreTool
+pathtool = MCFTDepositPathFracInFibreTool()
+pathtool.CrossTalkProb = {CrossTalkProb}
+
 from Configurables import MCFTDepositDistributionTool
 
 distributiontool = MCFTDepositDistributionTool()
@@ -100,6 +107,7 @@ distributiontool.LightSharing = "Gaussian"
 distributiontool.GaussianSharingWidth = {PhotonWidth}
 distributiontool.OldLightSharingCentral = 0.68
 distributiontool.OldLightSharingEdge = 0.5
+distributiontool.addTool(pathtool)
 
 from Configurables import MCFTDepositCreator
 

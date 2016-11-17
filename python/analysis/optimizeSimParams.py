@@ -5,9 +5,6 @@
 ## N.B.: Requires setting up the enviroment by source job/setup.sh
 ## N.B.: Options such as output directory, data to compare, etc are set via job/job_options.py
 
-
-
-from param_config import configure_params
 import os, time, shutil, sys
 import subprocess as sb
 from glob import glob
@@ -15,12 +12,12 @@ import ROOT, math
 from array import array
 
 repo = os.environ["SCIFITESTBEAMSIMROOT"]
-sys.path.append(repo+'/job/')
-from submit import launch_interactive
+from param_config import configure_params
 import job_config as jc
-from utils.value import Value
-from utils.wheel import Wheel
-from utils.math_functions import *
+from job.utils.submit import launch_interactive
+from job.utils.value import Value
+from job.utils.wheel import Wheel
+from job.utils.math_functions import *
 
 wheel = Wheel()
 
@@ -101,9 +98,8 @@ class OptimizeParams :
                 batch_cmd = "bsub -R 'pool>30000' -o {dir}/out -e {dir}/err -q {queue} -J {jname} < {dir}/run.sh"
                 batch_cmd = batch_cmd.format(dir=outdir,queue="1nd",jname=outdir)
             else :
-                #batch_cmd = "srun --nodes=4 --partition=pdebug --batch my_script"
-                batch_cmd = "srun --nodes=10 --partition=batch --batch {dir}/run.sh"
-                batch_cmd = batch_cmd.format(dir=outdir)
+                print "Can't launch in natch mode"
+                sys.exit()
 
             sb.call(batch_cmd,shell=True)
 
@@ -135,7 +131,7 @@ class OptimizeParams :
             hasoutput = int(len(glob(outdir+"/comparisons/chi*.txt")) == 6)
             if hasoutput and self.mode!="force"  : continue
             
-            print "\n******************\n Running analysis for point ({0}/{1}): ".format(ip,self.ntotpoints)
+            print "\n******************\n Running analysis for point ({0}/{1}): ".format(ip+1,self.ntotpoints)
             print vdict
 
             frun = open(outdir + "/run.sh","w")
@@ -173,7 +169,7 @@ class OptimizeParams :
             msg = "\r  "+w+"   Iteration {0}/{1}, jobs finished {2}/{3}"
             sys.stdout.write(msg.format(self.curiter,self.niterations,nfiles,self.ntotpoints))
             sys.stdout.flush()
-            if nfiles % int( self.ntotpoints ) == 0 : break
+            if nfiles > 0 and nfiles % int( self.ntotpoints ) == 0 : break
 
         print "\nIteration {0}/{1}. Production finished. Calculating chi2.......".format(self.curiter,self.niterations)
         for d in glob(self.outdir+"/"+str(self.curiter)+"/*") :
@@ -229,6 +225,17 @@ class OptimizeParams :
         print bestpoints
         self.make_plot()
 
+        odir = self.outdir+"/best"
+        if not os.path.exists(odir) : os.mkdir(odir)
+        config_file = configure_params(bestpoints,odir+"/")
+            
+        frun = open(odir + "/run.sh","w")
+        frun.write("source "+repo+"/job/setup.sh &> setuplog\n")
+        frun.write("python "+repo+"/job/run.py " + odir + "/ " + config_file + " --plot")
+        frun.close()
+
+        self.launch(odir,config_file)
+
     def make_plot(self) :
 
         c = ROOT.TCanvas()
@@ -276,19 +283,18 @@ if __name__ == '__main__':
 
     print "Optimizing..."
 
-    optimizer = OptimizeParams(jc.outdir,niter = 4)
+    optimizer = OptimizeParams(jc.outdir,niter = 3)
     optimizer.set_launch_mode("interactive")
     #optimizer.set_launch_mode("local")
-     
-    #optimizer.mode = "relaunch"
-    #optimizer.curiter = 1
+    
+    #optimizer.add_variable("PhotonWidth",0.,0.7,3, limits=[0.,2.])
+    
+    #optimizer.add_variable("ShortAttLgh",100,1000,3, limits=[0.,500.])
+    #optimizer.add_variable("LongAttLgh",4000,5500,3, limits=[3000.,6000.])
+    #optimizer.add_variable("ShortFraction",0.,0.7,3, limits=[0.,1.])
+    
+    optimizer.add_variable("CrossTalkProb",0.,0.3,9, limits=[0.,1.])
 
-    optimizer.add_variable("PhotonWidth",0.,0.7,3, limits=[0.,2.])
-    
-    optimizer.add_variable("ShortAttLgh",100,1000,3, limits=[0.,500.])
-    optimizer.add_variable("LongAttLgh",4000,5500,3, limits=[3000.,6000.])
-    optimizer.add_variable("ShortFraction",0.,0.7,3, limits=[0.,1.])
-    
     optimizer.optimize()
 
 
