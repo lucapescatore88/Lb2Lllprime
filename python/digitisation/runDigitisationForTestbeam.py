@@ -94,7 +94,7 @@ att.XMaxIrradiatedZone = 999999999999.#2000
 att.YMaxIrradiatedZone = -1.#500
 
 from Configurables import MCFTDepositPathFracInFibreTool
-pathtool = MCFTDepositPathFracInFibreTool()
+#pathtool = MCFTDepositPathFracInFibreTool()
 # pathtool.CrossTalkProb = 0.04
 
 from Configurables import MCFTDepositDistributionTool
@@ -112,7 +112,7 @@ distributiontool.GaussianSharingWidth = 0.5
 #Options if old light sharing is used
 distributiontool.OldLightSharingCentral = 0.68
 distributiontool.OldLightSharingEdge = 0.5
-distributiontool.addTool(pathtool)
+#distributiontool.addTool(pathtool)
 
 from Configurables import MCFTDepositCreator
 
