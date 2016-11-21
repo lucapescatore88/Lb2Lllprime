@@ -287,13 +287,13 @@ if __name__ == '__main__':
     optimizer.set_launch_mode("interactive")
     #optimizer.set_launch_mode("local")
     
-    #optimizer.add_variable("PhotonWidth",0.,0.7,3, limits=[0.,2.])
+    optimizer.add_variable("PhotonWidth",0.,0.7,3, limits=[0.,2.])
     
-    #optimizer.add_variable("ShortAttLgh",100,1000,3, limits=[0.,500.])
-    #optimizer.add_variable("LongAttLgh",4000,5500,3, limits=[3000.,6000.])
-    #optimizer.add_variable("ShortFraction",0.,0.7,3, limits=[0.,1.])
+    optimizer.add_variable("ShortAttLgh",100,1000,3, limits=[0.,500.])
+    optimizer.add_variable("LongAttLgh",4000,5500,3, limits=[3000.,6000.])
+    optimizer.add_variable("ShortFraction",0.,0.7,3, limits=[0.,1.])
     
-    optimizer.add_variable("CrossTalkProb",0.,0.3,9, limits=[0.,1.])
+    #optimizer.add_variable("CrossTalkProb",0.,0.3,9, limits=[0.,1.])
 
     optimizer.optimize()
 
