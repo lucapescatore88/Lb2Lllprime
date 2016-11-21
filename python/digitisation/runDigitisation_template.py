@@ -95,7 +95,7 @@ att.YMaxIrradiatedZone = -1.#500
 
 from Configurables import MCFTDepositPathFracInFibreTool
 pathtool = MCFTDepositPathFracInFibreTool()
-pathtool.CrossTalkProb = {CrossTalkProb}
+#pathtool.CrossTalkProb = {CrossTalkProb}
 
 from Configurables import MCFTDepositDistributionTool
 
