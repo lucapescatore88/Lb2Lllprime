@@ -7,7 +7,6 @@ import os
 from math import tan, radians
 
 from Gauss.Configuration import *
-#from Gaudi.Configuration import *
 from Configurables import Gauss, LHCbApp, CondDB
 import GaudiKernel.SystemOfUnits as units
 
@@ -63,18 +62,28 @@ def execute(pos="c", angle=0):
   #   local  = (-219.75-0.05,-1213.5+50, 0)
   #   global = (484.3, 2376.362, 7791.622)   
   
+#  posA = {
+#          "x": 484.3,
+#          "y": 49.378,
+#          "z": 7783.242
+#         }  
+#  posC = {
+#          "x" : 484.3,
+#          "y" : 2376.362,
+#          "z" : 7791.622
+#         }
+
   posA = {
-          "x": 484.3,
-          "y": 49.378,
-          "z": 7783.242
+          "x": 2600.3,
+          "y": 62.877,
+          "z": 7783.290
          }  
   posC = {
-          "x" : 484.3,
-          "y" : 2376.362,
-          "z" : 7791.622
+          "x" : 2600.3,
+          "y" : 2362.863,
+          "z" : 7791.508
          }
 
-  
   hit_pos = {}  
   if pos == "a":
       hit_pos = posA
