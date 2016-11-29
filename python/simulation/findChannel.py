@@ -26,9 +26,9 @@ det = appMgr.detSvc()
 FT = det['/dd/Structure/LHCb/AfterMagnetRegion/T/FT']
 
 # TestBeam Position A in local coordinates (near mirror)
-point_A = gbl.Gaudi.XYZPoint(-219.75-0.05,-1200.0+50,0)
+point_A = gbl.Gaudi.XYZPoint(-24,-1200.0+50,0)
 # TestBeam Position C in local coordinates (near SiPMs)
-point_C = gbl.Gaudi.XYZPoint(-219.75-0.05,+1200.0-50,0)
+point_C = gbl.Gaudi.XYZPoint(-24,+1200.0-50,0)
 
 # Choose station, layer, quarter, module, mat
 station_id = 1  # first station
@@ -47,7 +47,6 @@ mat_id = 0
 #print fibremodule
 
 channel_in_target_mat = gbl.LHCb.FTChannelID(station_id, layer_id, quarter_id, module_id, mat_id, 0,0)
-#fibremodule = FT.findModule(channel_in_target_module)
 fibremat = FT.findMat(channel_in_target_mat)
 
 points = {

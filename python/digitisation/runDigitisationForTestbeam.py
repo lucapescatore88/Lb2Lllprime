@@ -51,8 +51,8 @@ LHCbApp().Simulation = True
 CondDB().Upgrade = True
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
 #CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
-#CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT61.db", dbName = "DDDB")
-CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60.db", dbName = "DDDB")
+CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT61_noEndplug.db", dbName = "DDDB")
+#CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60.db", dbName = "DDDB")
 
 LHCbApp().DDDBtag = cfg.DDDBtag
 LHCbApp().CondDBtag = cfg.CondDBtag
@@ -91,6 +91,10 @@ att.FractionShort = 0.34           # 0.18 # TestBeam: HD1 0.273, HD2 0.406
 att.XMaxIrradiatedZone = 999999999999.#2000
 att.YMaxIrradiatedZone = -1.#500
 
+from Configurables import MCFTDepositPathFracInFibreTool
+pathtool = MCFTDepositPathFracInFibreTool()
+pathtool.CrossTalkProb = 0.044
+
 from Configurables import MCFTDepositDistributionTool
 
 distributiontool = MCFTDepositDistributionTool()
@@ -106,6 +110,7 @@ distributiontool.GaussianSharingWidth = 0.5
 #Options if old light sharing is used
 distributiontool.OldLightSharingCentral = 0.68
 distributiontool.OldLightSharingEdge = 0.5
+distributiontool.addTool(pathtool)
 
 
 from Configurables import MCFTDepositCreator
@@ -140,7 +145,6 @@ dre.DataOnDemand = True
 
 lhcbApp = LHCbApp()
 lhcbApp.Simulation = True
-
 
 files = []
 #For position A and 10degrees, the ganga job number is 1. Change this number to access different beam positions
@@ -189,14 +193,7 @@ while True:
     break
 
   nHits += len(evt["MC/FT/Hits"])
-#  hits = evt["MC/FT/Hits"]
-#  for hit in hits:
-#    print hit.entry().Z()
-#    z_mc_hit[0] = float(hit.entry().Z())
-#    y_mc_hit[0] = float(hit.entry().Y())
-#    x_mc_hit[0] = float(hit.entry().X())
-#    tree_hits.Fill()
-
+  
   digits = evt['/Event/MC/FT/Digits'].containedObjects()
   for digit in digits:
     
@@ -210,7 +207,7 @@ while True:
         
     if jump : continue 
     channel = digit.channelID()
-    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 :
+    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 and channel.mat()==0:
       sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.photoElectrons()
  
   for t in outputTrees:
@@ -222,10 +219,4 @@ for t in outputTrees:
   t.Write()
 outputFile.Close()
 
-#outputFileHits.cd()
-#tree_hits.Write()
-#outputFileHits.Close()
 
-
-
-print("number of hits found: {0}".format(nHits))

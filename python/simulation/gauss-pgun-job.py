@@ -18,6 +18,7 @@ sys.path.append(local_dir)
 from Configurables import LHCbApp, CondDB
 
 def execute(pos="c", angle=0):
+  
   importOptions("$APPCONFIGOPTS/Gauss/Beam7000GeV-md100-nu7.6-HorExtAngle.py")
 
   importOptions("$LBPYTHIA8ROOT/options/Pythia8.py")
@@ -28,17 +29,16 @@ def execute(pos="c", angle=0):
   # FTv5
   importOptions('$APPCONFIGOPTS/Gauss/Gauss-Upgrade-Baseline-20150522.py')
   
-
   outpath = "testbeam_simulation_position_" + pos  + '_at_' + str(angle) + 'deg'
 
   Gauss().DataType = "Upgrade"
 
   LHCbApp().DDDBtag = "dddb-20160304"
   LHCbApp().CondDBtag = "sim-20150716-vc-md100"
-  CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
-#  CondDB().addLayer(dbFile = "/project/bfys/jtilburg/DDDB_FT60.db", dbName = "DDDB")
+  CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT61_noEndplug.db", dbName = "DDDB")
 
   importOptions('$LBPGUNSROOT/options/PGuns.py')
+
   from Configurables import ParticleGun
   #ParticleGun().EventType = 52210010
 
@@ -47,41 +47,30 @@ def execute(pos="c", angle=0):
   ParticleGun().addTool(MaterialEval, name="MaterialEval")
   ParticleGun().ParticleGunTool = "MaterialEval"
 
-# test beam position jargon
-#position a: 225.5 cm (near mirror) ~5 cm distance from mirror
-#position b: 125.5 cm
-#position c: 30.5 cm (near sipm) ~ 5 cm distance from sipm
-#default y table position: 72.4 cm
+  # test beam position jargon
+  #position a: 225.5 cm (near mirror) ~5 cm distance from mirror
+  #position b: 125.5 cm
+  #position c: 30.5 cm (near sipm) ~ 5 cm distance from sipm
+  #default y table position: 72.4 cm
 
   # The target is channelID 35 
   # of SiPM 1 in station 1, layer 0, quarter 3, module 0. The local and global coordinates are:
   # Position A (near mirror)
-  #   local  = (-219.75-0.05,-1213.5+50, 0)
-  #   global = (484.3, 49.378, 7783.242)
+  #   local  = -24.0 -1150.0 0.0
+  #   global = 2600.7 63.38 7783.23
   # Position C (near SiPM)
-  #   local  = (-219.75-0.05,-1213.5+50, 0)
-  #   global = (484.3, 2376.362, 7791.622)   
+  #   local  = -24.0 1150.0 0.0
+  #   global = 2600.7 2363.36 7791.51 
   
-#  posA = {
-#          "x": 484.3,
-#          "y": 49.378,
-#          "z": 7783.242
-#         }  
-#  posC = {
-#          "x" : 484.3,
-#          "y" : 2376.362,
-#          "z" : 7791.622
-#         }
-
   posA = {
-          "x": 2600.3,
-          "y": 62.877,
-          "z": 7783.290
+          "x": 2600.7,
+          "y": 63.378,
+          "z": 7783.228
          }  
   posC = {
-          "x" : 2600.3,
-          "y" : 2362.863,
-          "z" : 7791.508
+          "x" : 2600.7,
+          "y" : 2363.363,
+          "z" : 7791.510
          }
 
   hit_pos = {}  
@@ -96,8 +85,7 @@ def execute(pos="c", angle=0):
   orig_delta_z = 40. # origin is 4cm towards small z w.r.t. mat center 
   orig_x = hit_pos["x"] + orig_delta_z*tan(radians(angle))
   orig_y = hit_pos["y"]
-  orig_z = hit_pos["z"] - orig_delta_z 
-
+  orig_z = hit_pos["z"] - orig_delta_z
 
   ParticleGun().MaterialEval.Xorig = orig_x
   ParticleGun().MaterialEval.Yorig = orig_y
@@ -130,11 +118,16 @@ def execute(pos="c", angle=0):
   GaussGen.FirstEventNumber = 1
   GaussGen.RunNumber = 1082
 
-  LHCbApp().EvtMax = 20
+  LHCbApp().EvtMax = 10000
 
   HistogramPersistencySvc().OutputFile = outpath+'-GaussHistos.root'
 
   OutputStream("GaussTape").Output = "DATAFILE='PFN:%s.sim' TYP='POOL_ROOTTREE' OPT='RECREATE'"%outpath
 
-execute("a",0)
+execute("c",20)
+
+
+
+
+
 

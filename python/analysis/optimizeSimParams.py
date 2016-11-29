@@ -5,9 +5,6 @@
 ## N.B.: Requires setting up the enviroment by source job/setup.sh
 ## N.B.: Options such as output directory, data to compare, etc are set via job/job_options.py
 
-
-
-from param_config import configure_params
 import os, time, shutil, sys
 import subprocess as sb
 from glob import glob
@@ -15,12 +12,16 @@ import ROOT, math
 from array import array
 
 repo = os.environ["SCIFITESTBEAMSIMROOT"]
-sys.path.append(repo+'/job/')
-from submit import launch_interactive
+if repo is None :
+    print "Please setup the environment befire running!"
+    sys.exit()
+
+from param_config import configure_params
 import job_config as jc
-from utils.value import Value
-from utils.wheel import Wheel
-from utils.math_functions import *
+from job.utils.value import Value
+from job.utils.wheel import Wheel
+from job.utils.math_functions import *
+from job.utils.submit import launch_interactive
 
 wheel = Wheel()
 
@@ -81,8 +82,8 @@ class OptimizeParams :
         
     def launch(self,outdir,config_file = None):
 
-        host = os.environ["HOSTNAME"]
-        is_lxplus = ( "lxplus" in host)
+        host = os.getenv("HOSTNAME")
+        is_lxplus = ( "lxplus" in host )
         if not is_lxplus and "lphe" not in host :
             print "This script is made to run only on lxplus or EPFL cluster. Go there!"
         if not is_lxplus and self.launch_mode == "interactive" :
@@ -91,25 +92,23 @@ class OptimizeParams :
          
         ## Command for local serial running
         if self.launch_mode == "local" :
-            print "python "+repo+"/job/run.py " + outdir + "/ " + config_file
-            sb.call("python "+repo+"/job/run.py " + outdir + "/ " + config_file,shell=True)
+            print "python "+repo+"/job/run.py --digiscript {cfile} {odir}".format(odir=outdir,cfile=config_file)
+            sb.call("python "+repo+"/job/run.py --digiscript {cfile} {odir}".format(odir=outdir,cfile=config_file),shell=True)
             
-        ## Command for prallel running on lxplus bach system
-        elif self.launch_mode == "batch" :
-
-            if is_lxplus : 
+        elif is_lxplus :
+        
+            ## Command for prallel running on lxplus bach system
+            if self.launch_mode == "batch" :
                 batch_cmd = "bsub -R 'pool>30000' -o {dir}/out -e {dir}/err -q {queue} -J {jname} < {dir}/run.sh"
                 batch_cmd = batch_cmd.format(dir=outdir,queue="1nd",jname=outdir)
-            else :
-                #batch_cmd = "srun --nodes=4 --partition=pdebug --batch my_script"
-                batch_cmd = "srun --nodes=10 --partition=batch --batch {dir}/run.sh"
-                batch_cmd = batch_cmd.format(dir=outdir)
+                sb.call(batch_cmd,shell=True)
 
-            sb.call(batch_cmd,shell=True)
+            ## Command for parallel running on lxplus in interactive mode
+            elif self.launch_mode == "interactive" :
+                launch_interactive(outdir)
 
-        ## Command for parallel running on lxplus in interactive mode
-        elif self.launch_mode == "interactive" :
-            launch_interactive(outdir)
+        else :
+            print "You are not on Lxplus, you can't run in batch mode"
 
     def send_jobs(self) :
 
@@ -135,12 +134,12 @@ class OptimizeParams :
             hasoutput = int(len(glob(outdir+"/comparisons/chi*.txt")) == 6)
             if hasoutput and self.mode!="force"  : continue
             
-            print "\n******************\n Running analysis for point ({0}/{1}): ".format(ip,self.ntotpoints)
+            print "\n******************\n Running analysis for point ({0}/{1}): ".format(ip+1,self.ntotpoints)
             print vdict
 
             frun = open(outdir + "/run.sh","w")
             frun.write("source "+repo+"/job/setup.sh &> setuplog\n")
-            frun.write("python "+repo+"/job/run.py " + outdir + "/ " + config_file)
+            frun.write("python "+repo+"/job/run.py --digiscript {cfile} {odir}".format(odir=outdir,cfile=config_file))
             frun.close()
 
             self.launch(outdir,config_file)
@@ -173,7 +172,7 @@ class OptimizeParams :
             msg = "\r  "+w+"   Iteration {0}/{1}, jobs finished {2}/{3}"
             sys.stdout.write(msg.format(self.curiter,self.niterations,nfiles,self.ntotpoints))
             sys.stdout.flush()
-            if nfiles % int( self.ntotpoints ) == 0 : break
+            if nfiles > 0 and nfiles % int( self.ntotpoints ) == 0 : break
 
         print "\nIteration {0}/{1}. Production finished. Calculating chi2.......".format(self.curiter,self.niterations)
         for d in glob(self.outdir+"/"+str(self.curiter)+"/*") :
@@ -188,8 +187,11 @@ class OptimizeParams :
             chi2files = glob(d+"/comparisons/chi2*.txt")
             if len(chi2files) == 0: print d
             for f in chi2files :
-                #line = open(f).readlines()[0]  ## G4-Boole chi2
-                line = open(f).readlines()[1]   ## Testbeam-Boole chi2
+                
+                if jc.sample_to_compare == "G4" :
+                    line = open(f).readlines()[0]  ## G4-Boole chi2
+                else :
+                    line = open(f).readlines()[1]   ## Testbeam-Boole chi2
                 elements = line.split()
                 chi2 += float(elements[0])
             
@@ -276,19 +278,18 @@ if __name__ == '__main__':
 
     print "Optimizing..."
 
-    optimizer = OptimizeParams(jc.outdir,niter = 4)
+    optimizer = OptimizeParams(jc.outdir,niter = 1)
     optimizer.set_launch_mode("interactive")
     #optimizer.set_launch_mode("local")
-     
-    #optimizer.mode = "relaunch"
-    #optimizer.curiter = 1
+    
+    #optimizer.add_variable("PhotonWidth",0.,0.7,3, limits=[0.,2.])
+    
+    #optimizer.add_variable("ShortAttLgh",100,1000,3, limits=[0.,500.])
+    #optimizer.add_variable("LongAttLgh",4000,5500,3, limits=[3000.,6000.])
+    #optimizer.add_variable("ShortFraction",0.,0.7,3, limits=[0.,1.])
+    
+    optimizer.add_variable("CrossTalkProb",0.,0.7,3, limits=[0.,1.])
 
-    optimizer.add_variable("PhotonWidth",0.,0.7,3, limits=[0.,2.])
-    
-    optimizer.add_variable("ShortAttLgh",100,1000,3, limits=[0.,500.])
-    optimizer.add_variable("LongAttLgh",4000,5500,3, limits=[3000.,6000.])
-    optimizer.add_variable("ShortFraction",0.,0.7,3, limits=[0.,1.])
-    
     optimizer.optimize()
 
 
