@@ -6,7 +6,7 @@ from glob import glob
 
 parser = argparse.ArgumentParser(description='Plot cluster properties from data and simulation.')
 parser.add_argument('-f', '--files', type=str, help="Path and name of the input .sim file, the * can be used as in /home/files/njob*/file.sim",
-                    default="/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/testbeam_simulation_position_a_at_10deg.sim")
+                    default="/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/testbeam_simulation_position_a_at_0deg.sim")
 parser.add_argument('-i', '--interactive', action = "store_true", default=False)
 parser.add_argument('-s', '--storeTestbeam', action = "store_true", default=False)
 parser.add_argument('-n', '--nickname', type=str, default="detailed")
@@ -79,7 +79,7 @@ appConf.TopAlg += ["MCFTPhotonCreator",
 
 
 from Configurables import SiPMResponse
-SiPMResponse().ElectronicsResponse = "pacific2"#Use flat SiPM time response 
+SiPMResponse().ElectronicsResponse = "flat"#Use flat SiPM time response 
 
 from Configurables import MCFTAttenuationTool
 att = MCFTAttenuationTool()
@@ -112,11 +112,12 @@ pathtool.CrossTalkProb = 0.044
 
 #distributiontool.OldLightSharingCentral = 0.68
 #distributiontool.OldLightSharingEdge = 0.5
-#distributiontool.addTool(pathtool)
 
 from Configurables import MCFTPhotonCreator
 
 MCFTPhotonCreator().addTool(att)
+MCFTPhotonCreator().addTool(pathtool)
+
 
 from Configurables import MCFTDepositCreator
 
