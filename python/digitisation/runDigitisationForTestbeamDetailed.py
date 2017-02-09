@@ -9,7 +9,7 @@ parser.add_argument('-f', '--files', type=str, help="Path and name of the input 
                     default="/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/testbeam_simulation_position_a_at_0deg.sim")
 parser.add_argument('-i', '--interactive', action = "store_true", default=False)
 parser.add_argument('-s', '--storeTestbeam', action = "store_true", default=False)
-parser.add_argument('-n', '--nickname', type=str, default="")
+parser.add_argument('-n', '--nickname', type=str, default="detailed")
 parser.add_argument('-r', '--resultPath', type=str, default="")
 parser.add_argument('-d', '--DDDBtag', type=str, default='dddb-20160304')
 parser.add_argument('-c', '--CondDBtag', type=str, default='sim-20150716-vc-md100')
@@ -64,7 +64,7 @@ appConf.ExtSvc+= [
                   ,'DataOnDemandSvc'
                   #,'NTupleSvc'
                   ]
-appConf.TopAlg += [
+appConf.TopAlg += ["MCFTPhotonCreator",
                    "MCFTDepositCreator",
                    "MCFTDepositMonitor",
                    "MCFTDigitCreator",
@@ -93,35 +93,41 @@ att.YMaxIrradiatedZone = -1.#500
 
 from Configurables import MCFTDepositPathFracInFibreTool
 pathtool = MCFTDepositPathFracInFibreTool()
-pathtool.CrossTalkProb = 0.192
-pathtool.CTModel = "4Fibers"
+pathtool.CrossTalkProb = 0.044
 
-from Configurables import MCFTDepositDistributionTool
+#from Configurables import MCFTDepositDistributionTool
 
-distributiontool = MCFTDepositDistributionTool()
-distributiontool.MinFractionForSignalDeposit = 0.005
-distributiontool.ImprovedDigitisation = True
-distributiontool.NumOfNeighbouringChannels = 3
-distributiontool.LightSharing = "Gaussian"
-distributiontool.GaussianSharingWidth = 0.5
+
+#distributiontool = MCFTDepositDistributionTool()
+#distributiontool.MinFractionForSignalDeposit = 0.005
+#distributiontool.ImprovedDigitisation = True
+#distributiontool.NumOfNeighbouringChannels = 3
+#distributiontool.LightSharing = "Gaussian"
+#distributiontool.GaussianSharingWidth = 0.5
+
 #The above option corresponds to the fraction of the channel width
 #covered by the gaussian distribution of photons at the end of the
 #fibre, it corresponds to a width of 125um.
 #Options if old light sharing is used
-distributiontool.OldLightSharingCentral = 0.68
-distributiontool.OldLightSharingEdge = 0.5
-distributiontool.addTool(pathtool)
+
+#distributiontool.OldLightSharingCentral = 0.68
+#distributiontool.OldLightSharingEdge = 0.5
+
+from Configurables import MCFTPhotonCreator
+
+MCFTPhotonCreator().addTool(att)
+MCFTPhotonCreator().addTool(pathtool)
 
 
 from Configurables import MCFTDepositCreator
 
 MCFTDepositCreator().SpillVector = ["/"]
 MCFTDepositCreator().SpillTimes = [0.0]
-MCFTDepositCreator().addTool(att)
-MCFTDepositCreator().addTool(distributiontool)
-MCFTDepositCreator().UseAttenuation = True
+#MCFTDepositCreator().addTool(att)
+#MCFTDepositCreator().addTool(distributiontool)
+#MCFTDepositCreator().UseAttenuation = True
 MCFTDepositCreator().SimulateNoise = False
-MCFTDepositCreator().PhotonsPerMeV = 130.
+#MCFTDepositCreator().PhotonsPerMeV = 120.
 
 from Configurables import MCFTDigitCreator
 tof = 25.4175840541
