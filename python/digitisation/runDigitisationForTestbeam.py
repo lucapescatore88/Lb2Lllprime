@@ -93,7 +93,8 @@ att.YMaxIrradiatedZone = -1.#500
 
 from Configurables import MCFTDepositPathFracInFibreTool
 pathtool = MCFTDepositPathFracInFibreTool()
-pathtool.CrossTalkProb = 0.044
+pathtool.CrossTalkProb = 0.192
+pathtool.CTModel = "4Fibers"
 
 from Configurables import MCFTDepositDistributionTool
 
@@ -102,7 +103,6 @@ distributiontool.MinFractionForSignalDeposit = 0.005
 distributiontool.ImprovedDigitisation = True
 distributiontool.NumOfNeighbouringChannels = 3
 distributiontool.LightSharing = "Gaussian"
-#distributiontool.GaussianSharingWidth = 0.5
 distributiontool.GaussianSharingWidth = 0.5
 #The above option corresponds to the fraction of the channel width
 #covered by the gaussian distribution of photons at the end of the
@@ -121,7 +121,7 @@ MCFTDepositCreator().addTool(att)
 MCFTDepositCreator().addTool(distributiontool)
 MCFTDepositCreator().UseAttenuation = True
 MCFTDepositCreator().SimulateNoise = False
-MCFTDepositCreator().PhotonsPerMeV = 120.
+MCFTDepositCreator().PhotonsPerMeV = 130.
 
 from Configurables import MCFTDigitCreator
 tof = 25.4175840541

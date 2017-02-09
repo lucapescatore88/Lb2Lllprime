@@ -40,7 +40,6 @@ from LinkerInstances.eventassoc import *
 
 import ROOT as R
 
-
 def resetSipmVals(sipimValPtr):
   for layer in sipimValPtr:
     for adcID in layer:
@@ -91,6 +90,7 @@ att.YMaxIrradiatedZone = -1.#500
 from Configurables import MCFTDepositPathFracInFibreTool
 pathtool = MCFTDepositPathFracInFibreTool()
 pathtool.CrossTalkProb = {CrossTalkProb}
+pathtool.CTModel = "8Fibers"
 
 from Configurables import MCFTDepositDistributionTool
 
@@ -112,7 +112,7 @@ MCFTDepositCreator().addTool(att)
 MCFTDepositCreator().addTool(distributiontool)
 MCFTDepositCreator().UseAttenuation = True
 MCFTDepositCreator().SimulateNoise = False
-MCFTDepositCreator().PhotonsPerMeV = 120.
+MCFTDepositCreator().PhotonsPerMeV = {PhotonsPerMeV}
 
 from Configurables import MCFTDigitCreator
 tof = 25.4175840541

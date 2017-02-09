@@ -9,6 +9,13 @@ import math
 
 colors = [1,4,2]
 
+def findMax(tree,variable) :
+
+    tree.Draw(variable+">>htest")
+    h = ROOT.gPad.GetPrimitive("htest")
+    binmax = h.GetMaximumBin()
+    return h.GetXaxis().GetBinCenter(binmax)
+
 def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_observable, title, beginning, end, numbins, noplot):
 
     histos = {}
@@ -28,7 +35,11 @@ def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_obse
     for i,t in enumerate(trees) :
         name = t[0].replace(" ","")
         if "Geant" in t[0] : t[1].Draw(geant_observable+'>>'+name)
-        elif "Beam" in t[0] : t[1].Draw(observable+'>>'+name,"distance_from_track<300&&distance_from_track>-300")
+        elif "Beam" in t[0] :
+            print t[0], observable
+            #curmax = findMax(t[1],"distance_from_track")
+            t[1].Draw(geant_observable+'>>'+name)#,"abs(distance_from_track - {curmax}) < 100".format(curmax=curmax))
+            #print observable
         else : t[1].Draw(observable+'>>'+name)
         leg.AddEntry(histos[name],t[0],"l")
 
@@ -36,8 +47,10 @@ def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_obse
     chi2ndf_testbeam = -1
     
     if "TestBeamdata" in histos :
+        #print "TestBeamdata"
         chi2ndf_testbeam = histos["TestBeamdata"].Chi2Test(histos["Boolesimulation"],"CHI2/NDF")
     if "Geant4simulation" in histos :
+        #print "Geant4simulation"
         chi2ndf = histos["Geant4simulation"].Chi2Test(histos["Boolesimulation"],"CHI2/NDF")
 
     if noplot : return chi2ndf, chi2ndf_testbeam, numbins, observable
@@ -90,9 +103,12 @@ if __name__ == '__main__':
     parser.add_argument("--noplot" , action="store_true")
     args = parser.parse_args()
 
-    features_and_properties = {'clusterSize'       : ('Cluster Size', 1, 7, 6, 'Clustersize'),
-                               'sumCharge'         : ('Total cluster charge', 0, 80, 80, 'Clustercharge'), 
-                               'maxCharge'         : ('Charge of the dominant channel in cluster', 0, 60, 60, 'highest_channel')}
+    #features_and_properties = {'clusterSize'       : ('Cluster Size', 1, 7, 6, 'Clustersize'),
+    #                           'sumCharge'         : ('Total cluster charge', 0, 80, 80, 'Clustercharge'), 
+    #                           'maxCharge'         : ('Charge of the dominant channel in cluster', 0, 60, 60, 'highest_channel')}
+    features_and_properties = { 'clusterSize'       : ('Cluster Size', 1, 7, 6, 'clusterSize'),
+                                'sumCharge'         : ('Total cluster charge', 0, 80, 80, 'clusterCharge') }
+
 
     ### Define files to be read and beginning and end of the histograms
 
@@ -104,9 +120,11 @@ if __name__ == '__main__':
     if args.testbf is not None :
         trees.append( ( "Test Beam data", ROOT.TChain(args.testbt)) )
         trees[-1][1].AddFile(args.testbf)
+        print args.testbf
     if args.simf is not None :
         trees.append( ("Boole simulation", ROOT.TChain(args.simt)) )
         trees[-1][1].AddFile(args.simf)
+        print args.simf
     if args.g4f is not None :
         trees.append( ("Geant4 simulation", ROOT.TChain(args.g4t)) )
         trees[-1][1].AddFile(args.g4f)
@@ -130,8 +148,8 @@ if __name__ == '__main__':
     of.write(str(totchi2)+ "   Total\n")
     of.write(str(totchi2_testbeam)+ "   Total Testbeam\n")
     for v in chi2s : 
-        of.write("{0} {1} {2}\n".format(v[0],v[2],[3]))
-        of.write("{0} {1} {2} Testbeam\n".format(v[1],v[2],[3]))
+        of.write("{0} {1} {2}\n".format(v[0],v[2],v[3]))
+        of.write("{0} {1} {2} Testbeam\n".format(v[1],v[2],v[3]))
     of.close()
 
 

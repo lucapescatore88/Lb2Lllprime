@@ -4,8 +4,7 @@
 ## Description: script to submit jobs (mostly done for lxplus but for local submissions works anywhere)
 ## N.B.: Needs an environment variable "JOBDIR" which is the location to put jobs outputs
 
-import os
-from sys import argv
+import os, sys
 from string import *
 import re
 from argparse import ArgumentParser
@@ -29,13 +28,14 @@ def getAliveNode() :
     return [node, out]
 
 def launch_interactive(dirname) :
+
     print "Searching for an alive node..."
     node, out = getAliveNode()
     print "Submitting to ", node
     os.system('ssh -o StrictHostKeyChecking=no %s "cd ' % node + dirname  + '; chmod +x run.sh ; ./run.sh" &')
     print "Start: ", datetime.now()
 
-
+## Main
 
 if __name__ == "__main__" :
 
@@ -65,28 +65,31 @@ if __name__ == "__main__" :
         help="Does not put the automatic ./ in front of the executable" )
     parser.add_argument("-m", dest="mail", default = "", action="store_const", const = "-u "+os.environ["USER"]+"@cern.ch",
         help="When job finished sends a mail to USER@cern.ch" )
+    parser.add_argument("-in", dest="infiles", default = "", help="Files to copy over")
     parser.add_argument("command", help="Command to launch")
     opts = parser.parse_args()
 
     random.seed()
-    exe = False
-    commands = opts.command.split()[0]
+    exe, execname = None, None
+    commands = opts.command.split(' ')
 
-    if(len(args) < 1) : print "Not enough arguments"
-    else : execname = commands[0]
-    if "." in execname : exe = True
-    elif len(commands) > 1 : execname = commands[1]  
-
+    if(len(commands) < 1) : print "Not enough arguments"
+    elif "." in commands[0] : 
+        execname = commands[0].replace('./','')
+        args = commands[1:]
+    elif len(commands) > 1 : 
+        execname = commands[1]
+        exe      = commands[0]
+        args = commands[2:]
+    else : sys.exit()
     if(opts.jobname == "") :
-        jobname = re.sub(r'\..*',"", execname)
+        jobname = re.sub(r'\..*',"", execname.replace('./',''))
    
-    sys.exit()
     ## Make the needed folders and copy the executable and everything else needed in them
 
-    if opts.basedir != "" :
-        subdirname = opts.basedir
+    subdirname = opts.basedir
     if opts.subdir != "" :
-        subdirname = opts.basedir+"/"+opts.subdir
+        subdirname += "/"+opts.subdir
     dirname = subdirname+"/"+opts.jobname
 
     if opts.run > -1 :
@@ -96,43 +99,47 @@ if __name__ == "__main__" :
         os.system("rm -fr " + dirname+"/*")
     os.system("mkdir -p " + dirname)
 
-    if(opts.unique) :
-        os.system("cp " + execname + " " + subdirname )
-        for i in range(1,len(args)) :
-            os.system("cp " + args[i] + " " + subdirname )
-    elif "." in execname :
-        os.system("cp " + execname + " " + dirname )
-        for i in range(1,len(args)) :
-            os.system("cp " + args[i] + " " + dirname )
-
+    if(opts.unique) : copyto = subdirname
+    else : copyto = dirname
+    if '/' not in execname :
+        os.system("cp " + execname + " " + copyto )
+    else :
+        print "Executable is a path. If you used all absolute paths the jobs will work anyway."
+    
+    for arg in opts.infiles.split() :
+        os.system("cp " + arg + " " + copyto )
+        if opts.unique :
+            os.system("ln -s {f1} {f2}".format(f1=copyto+'/'+arg,f2=dirname+'/'+arg))
     
     ## Create the run.sh file containing the information about how the executable is run
 
     os.system( "cd " + dirname )
     runfile = open(dirname+"/run.sh","w")
-    if opts.shell != "" :
+    if opts.shell != "" :                   ### Settings    
         runfile.write(opts.shell + "\n")
     runfile.write( "cd " + dirname + "\n")
     if opts.setup != "" :
         runfile.write(opts.setup + "\n")
-    if(opts.unique):
-        runfile.write( subdirname+"/"+args[0] )
-    elif not exe or opts.noscript :
-        runfile.write( args[0] )
+    if exe is None and not opts.noscript:   ### Ensure executable
+        runfile.write("chmod 755 " + copyto + "/" +execname +'\n')
+    if opts.noscript :
+        runfile.write( opts.command)
+    elif not opts.unique :                    ### Write command in appropriate way
+        runfile.write( dirname+'/'+opts.command.replace('./','') )
+    elif exe is None :
+        runfile.write( subdirname+'/'+opts.command.replace('./','') )
     else :
-        #runfile.write( "chmod +x "+args[0] +"\n" )
-        runfile.write( dirname+"/"+args[0] )
-    if opts.local or opts.interactive :
+        runfile.write( '{exe} {dir} {args}'.format(exe=exe,dir=subdirname+"/"+execname,args=' '.join(args)) )
+    if opts.local or opts.interactive :     ### Output
         runfile.write( " >& " + dirname + "/out " )
     runfile.close()
     os.system( "chmod 755 " + dirname + "/run.sh" )
 
-
     ## Run executable in local, interactive or batch mode
-
+    
     if(opts.subdir != "") :
         opts.subdir=(re.sub("^.*/","",opts.subdir)+"_")
-
+    
     if opts.local :                           ## Local
         print "Running local"
         os.system( "cd " + dirname )

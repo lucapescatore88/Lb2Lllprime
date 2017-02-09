@@ -7,7 +7,6 @@ import os
 from math import tan, radians
 
 from Gauss.Configuration import *
-#from Gaudi.Configuration import *
 from Configurables import Gauss, LHCbApp, CondDB
 import GaudiKernel.SystemOfUnits as units
 
@@ -36,9 +35,10 @@ def execute(pos="c", angle=0):
 
   LHCbApp().DDDBtag = "dddb-20160304"
   LHCbApp().CondDBtag = "sim-20150716-vc-md100"
-  CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/databases/DDDB_FT60_noEndPlug.db", dbName = "DDDB")
-
-  Gauss().DetectorGeo = { "Detectors": [ 'VP', 'FT' ] }
+  CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT61_noEndplug.db", dbName = "DDDB")
+  CondDB.LocalTags = {"SIMCOND":["magnet-off"]}
+ 
+  Gauss().DetectorGeo = { "Detectors": [ 'VP','FT' ] }
   Gauss().DetectorSim = { "Detectors": [ 'FT' ] }
   Gauss().DetectorMoni = { "Detectors": [ 'FT' ] }
 
@@ -57,26 +57,16 @@ def execute(pos="c", angle=0):
 #position c: 30.5 cm (near sipm) ~ 5 cm distance from sipm
 #default y table position: 72.4 cm
 
-  # The target is channelID 35 
-  # of SiPM 1 in station 1, layer 0, quarter 3, module 0. The local and global coordinates are:
-  # Position A (near mirror)
-  #   local  = (-219.8, -1213.5+50, 0)
-  #   global = (2600.300, 49.378, 7783.177)
-  # Position C (near SiPM)
-  #   local  = (-219.75, 1213.5-50, 0)
-  #   global = (2600.300, 2376.363, 7791.557)   
-  
   posA = {
-          "x": 2600.300,  
-          "y":   49.378,
-          "z": 7783.177
+          "x": 2600.55,
+          "y": 63.378,
+          "z": 7783.228
          }  
   posC = {
-          "x" : 2600.300,
-          "y" : 2376.363,
-          "z" : 7791.557
+          "x" : 2600.55,
+          "y" : 2363.363,
+          "z" : 7791.510
          }
-
   
   hit_pos = {}  
   if pos == "a":
@@ -87,7 +77,7 @@ def execute(pos="c", angle=0):
       exit()
   
   # origin point
-  orig_delta_z = 7000. # origin is 4cm towards small z w.r.t. mat center 
+  orig_delta_z = 7000.
   orig_x = hit_pos["x"] + orig_delta_z*tan(radians(angle))
   orig_y = hit_pos["y"]
   orig_z = hit_pos["z"] - orig_delta_z 
@@ -102,10 +92,10 @@ def execute(pos="c", angle=0):
   ParticleGun().MaterialEval.Zorig = orig_z
 
   # target point
-  target_delta_z = 500.
+  target_delta_z = 300.
   target_x = hit_pos["x"] - target_delta_z*tan(radians(angle))
   target_y = hit_pos["y"]
-  target_z = hit_pos["z"] + target_delta_z  #9439. #7870. #9439. #just shoot somewhere far, far away
+  target_z = hit_pos["z"] + target_delta_z
 
   ParticleGun().MaterialEval.ZPlane = target_z
   ParticleGun().MaterialEval.Xmin = target_x - beam_width_x/2.
@@ -115,7 +105,7 @@ def execute(pos="c", angle=0):
   
   # particle options 
   ParticleGun().MaterialEval.PdgCode = 211
-  ParticleGun().MaterialEval.ModP = 150000 #150GeV
+  ParticleGun().MaterialEval.ModP = 150 * units.GeV
   
   # Set min and max number of particles to produce in an event
   from Configurables import FlatNParticles
@@ -134,5 +124,5 @@ def execute(pos="c", angle=0):
 
   OutputStream("GaussTape").Output = "DATAFILE='PFN:%s.sim' TYP='POOL_ROOTTREE' OPT='RECREATE'"%outpath
 
-execute("c",20)
+execute("a",25)
 

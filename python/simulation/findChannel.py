@@ -26,9 +26,16 @@ det = appMgr.detSvc()
 FT = det['/dd/Structure/LHCb/AfterMagnetRegion/T/FT']
 
 # TestBeam Position A in local coordinates (near mirror)
-point_A = gbl.Gaudi.XYZPoint(-24,-1200.0+50,0)
+#point_A = gbl.Gaudi.XYZPoint(-23.85,-1200.0+50,0) ## Channel 36
 # TestBeam Position C in local coordinates (near SiPMs)
-point_C = gbl.Gaudi.XYZPoint(-24,+1200.0-50,0)
+#point_C = gbl.Gaudi.XYZPoint(-23.85,+1200.0-50,0)
+# TestBeam Position A in local coordinates (near mirror)
+point_A = gbl.Gaudi.XYZPoint(-23.85,-1200.0+50,0) ## Channel 36
+# TestBeam Position C in local coordinates (near SiPMs)
+point_C = gbl.Gaudi.XYZPoint(-23.85,+1200.0-50,0)
+
+
+
 
 # Choose station, layer, quarter, module, mat
 station_id = 1  # first station
