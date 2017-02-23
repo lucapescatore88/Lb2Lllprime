@@ -64,8 +64,7 @@ appConf.ExtSvc+= [
                   ,'DataOnDemandSvc'
                   #,'NTupleSvc'
                   ]
-appConf.TopAlg += ["MCFTPhotonCreator",
-                   "MCFTDepositCreator",
+appConf.TopAlg += ["MCFTDepositCreator",
                    "MCFTDepositMonitor",
                    "MCFTDigitCreator",
                    "FTClusterCreator",
@@ -91,43 +90,34 @@ att.FractionShort = 0.34           # 0.18 # TestBeam: HD1 0.273, HD2 0.406
 att.XMaxIrradiatedZone = 999999999999.#2000
 att.YMaxIrradiatedZone = -1.#500
 
-from Configurables import MCFTDepositPathFracInFibreTool
-pathtool = MCFTDepositPathFracInFibreTool()
-pathtool.CrossTalkProb = 0.044
-
-#from Configurables import MCFTDepositDistributionTool
 
 
-#distributiontool = MCFTDepositDistributionTool()
-#distributiontool.MinFractionForSignalDeposit = 0.005
-#distributiontool.ImprovedDigitisation = True
-#distributiontool.NumOfNeighbouringChannels = 3
-#distributiontool.LightSharing = "Gaussian"
-#distributiontool.GaussianSharingWidth = 0.5
+from Configurables import MCFTPhotonTool
+photon_tool = MCFTPhotonTool()
+photon_tool.PhotonsPerMeV = 130
 
-#The above option corresponds to the fraction of the channel width
-#covered by the gaussian distribution of photons at the end of the
-#fibre, it corresponds to a width of 125um.
-#Options if old light sharing is used
+from Configurables import MCFTDistributionChannelTool
+channel_tool = MCFTDistributionChannelTool()
+#channel_tool.LightSharing = "gauss"
 
-#distributiontool.OldLightSharingCentral = 0.68
-#distributiontool.OldLightSharingEdge = 0.5
+from Configurables import MCFTDistributionFibreTool
+fibre_tool = MCFTDistributionFibreTool()
+#fibre_tool.CrossTalkProb = 0.044
 
-from Configurables import MCFTPhotonCreator
-
-MCFTPhotonCreator().addTool(att)
-MCFTPhotonCreator().addTool(pathtool)
-
+from Configurables import MCFTPhotoelectronTool
+pe_tool = MCFTPhotoelectronTool()
 
 from Configurables import MCFTDepositCreator
-
-MCFTDepositCreator().SpillVector = ["/"]
+MCFTDepositCreator().SimulationType = "detailed"
+MCFTDepositCreator().SpillNames = ["/"]
 MCFTDepositCreator().SpillTimes = [0.0]
-#MCFTDepositCreator().addTool(att)
-#MCFTDepositCreator().addTool(distributiontool)
-#MCFTDepositCreator().UseAttenuation = True
 MCFTDepositCreator().SimulateNoise = False
-#MCFTDepositCreator().PhotonsPerMeV = 120.
+MCFTDepositCreator().addTool(att)
+MCFTDepositCreator().addTool(photon_tool)
+MCFTDepositCreator().addTool(channel_tool)
+MCFTDepositCreator().addTool(fibre_tool)
+MCFTDepositCreator().addTool(pe_tool)
+
 
 from Configurables import MCFTDigitCreator
 tof = 25.4175840541

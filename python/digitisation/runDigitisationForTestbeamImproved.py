@@ -9,7 +9,7 @@ parser.add_argument('-f', '--files', type=str, help="Path and name of the input 
                     default="/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/testbeam_simulation_position_a_at_0deg.sim")
 parser.add_argument('-i', '--interactive', action = "store_true", default=False)
 parser.add_argument('-s', '--storeTestbeam', action = "store_true", default=False)
-parser.add_argument('-n', '--nickname', type=str, default="v2floatphotons")
+parser.add_argument('-n', '--nickname', type=str, default="improved")
 parser.add_argument('-r', '--resultPath', type=str, default="")
 parser.add_argument('-d', '--DDDBtag', type=str, default='dddb-20160304')
 parser.add_argument('-c', '--CondDBtag', type=str, default='sim-20150716-vc-md100')
@@ -64,8 +64,7 @@ appConf.ExtSvc+= [
                   ,'DataOnDemandSvc'
                   #,'NTupleSvc'
                   ]
-appConf.TopAlg += ["MCFTPhotonCreator",
-                   "MCFTDepositCreator",
+appConf.TopAlg += ["MCFTDepositCreator",
                    "MCFTDepositMonitor",
                    "MCFTDigitCreator",
                    "FTClusterCreator",
@@ -91,29 +90,34 @@ att.FractionShort = 0.34           # 0.18 # TestBeam: HD1 0.273, HD2 0.406
 att.XMaxIrradiatedZone = 999999999999.#2000
 att.YMaxIrradiatedZone = -1.#500
 
-from Configurables import MCFTDepositPathFracInFibreTool
-pathtool = MCFTDepositPathFracInFibreTool()
-pathtool.CrossTalkProb = 0.044
 
-from Configurables import MCFTEnergyToPhotonsTool
-energytool = MCFTEnergyToPhotonsTool()
-energytool.PhotonsPerMeV = 120
 
-from Configurables import MCFTPhotonCreator
+from Configurables import MCFTPhotonTool
+photon_tool = MCFTPhotonTool()
+photon_tool.PhotonsPerMeV = 130
 
-MCFTPhotonCreator().UseAttenuation = True
-MCFTPhotonCreator().addTool(energytool)
-MCFTPhotonCreator().addTool(att)
-MCFTPhotonCreator().addTool(pathtool)
-MCFTPhotonCreator().UseSinglePhotons = False
+from Configurables import MCFTDistributionChannelTool
+channel_tool = MCFTDistributionChannelTool()
+#channel_tool.LightSharing = "gauss"
+
+from Configurables import MCFTDistributionFibreTool
+fibre_tool = MCFTDistributionFibreTool()
+#fibre_tool.CrossTalkProb = 0.044
+
+from Configurables import MCFTPhotoelectronTool
+pe_tool = MCFTPhotoelectronTool()
 
 from Configurables import MCFTDepositCreator
-
-MCFTDepositCreator().SpillVector = ["/"]
+MCFTDepositCreator().SimulationType = "improved"
+MCFTDepositCreator().SpillNames = ["/"]
 MCFTDepositCreator().SpillTimes = [0.0]
 MCFTDepositCreator().SimulateNoise = False
-MCFTDepositCreator().ImprovedSimulation = True
-MCFTDepositCreator().GaussianSharingWidth = 0.5
+MCFTDepositCreator().addTool(att)
+MCFTDepositCreator().addTool(photon_tool)
+MCFTDepositCreator().addTool(channel_tool)
+MCFTDepositCreator().addTool(fibre_tool)
+MCFTDepositCreator().addTool(pe_tool)
+
 
 from Configurables import MCFTDigitCreator
 tof = 25.4175840541
