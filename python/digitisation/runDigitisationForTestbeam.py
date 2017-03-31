@@ -25,6 +25,8 @@ from Configurables import CondDB, DDDBConf
 
 #Temporary
 #Boole().DataType   = "Upgrade"
+#print dir(Boole())
+#Boole().Simulation   = True
 
 # ROOT persistency for histograms
 importOptions('$STDOPTS/RootHist.opts')
@@ -51,8 +53,8 @@ LHCbApp().Simulation = True
 CondDB().Upgrade = True
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
 #CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
-CondDB().addLayer(dbFile = "/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/DDDB_FT61_noEndplug.db", dbName = "DDDB")
-#CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60.db", dbName = "DDDB")
+#CondDB().addLayer(dbFile = "/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/DDDB_FT61_noEndplug.db", dbName = "DDDB")
+CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT61_noEndplug.db", dbName = "DDDB")
 
 LHCbApp().DDDBtag = cfg.DDDBtag
 LHCbApp().CondDBtag = cfg.CondDBtag
@@ -92,9 +94,14 @@ att.XMaxIrradiatedZone = 999999999999.#2000
 att.YMaxIrradiatedZone = -1.#500
 
 from Configurables import MCFTDepositPathFracInFibreTool
+<<<<<<< HEAD
 pathtool = MCFTDepositPathFracInFibreTool()
 pathtool.CrossTalkProb = 0.192
 pathtool.CTModel = "4Fibers"
+=======
+#pathtool = MCFTDepositPathFracInFibreTool()
+# pathtool.CrossTalkProb = 0.04
+>>>>>>> ea9fb09492013cc17e5d180d02718704b66afed7
 
 from Configurables import MCFTDepositDistributionTool
 
@@ -110,8 +117,12 @@ distributiontool.GaussianSharingWidth = 0.5
 #Options if old light sharing is used
 distributiontool.OldLightSharingCentral = 0.68
 distributiontool.OldLightSharingEdge = 0.5
+<<<<<<< HEAD
 distributiontool.addTool(pathtool)
 
+=======
+#distributiontool.addTool(pathtool)
+>>>>>>> ea9fb09492013cc17e5d180d02718704b66afed7
 
 from Configurables import MCFTDepositCreator
 

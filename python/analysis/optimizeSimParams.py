@@ -242,6 +242,17 @@ class OptimizeParams :
         print bestpoints
         self.make_plot()
 
+        odir = self.outdir+"/best"
+        if not os.path.exists(odir) : os.mkdir(odir)
+        config_file = configure_params(bestpoints,odir+"/")
+            
+        frun = open(odir + "/run.sh","w")
+        frun.write("source "+repo+"/job/setup.sh &> setuplog\n")
+        frun.write("python "+repo+"/job/run.py " + odir + "/ " + config_file + " --plot")
+        frun.close()
+
+        self.launch(odir,config_file)
+
     def make_plot(self) :
 
         c = ROOT.TCanvas()

@@ -20,9 +20,7 @@ outdir = work + '/SciFiTest/PhotonPerMeVScan_Improved'
 
   # Frameworks locations
 gauss = cmtuser+'/GaussDev'
-#boole = cmtuser+"/BooleDev_v30r1"
-boole = work+"/SciFiDevelopment/BOOLE/BOOLE_v31r0/build.x86_64-slc6-gcc49-opt"
-
+boole = "/afs/cern.ch/work/p/pluca/SciFiDevelopment/BOOLE/BOOLE_v30r2/build.x86_64-slc6-gcc49-opt/"
 
 ## Data to compare (don't change if not specifically needed)
 #testbeam_data  = "/eos/lhcb/wg/SciFi/Simulation/Testbeam/TestbeamData/20160922/"    ## 2015

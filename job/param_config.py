@@ -19,6 +19,7 @@ def configure_params(values, path="", digifile = "runDigitisation_template.py") 
     config_template = open(templatefile).read()
 
     print values
+
     pyfile = open(path+"params_configuration.py","w")
     pyfile.write(config_template.format(**values))
     pyfile.close()
