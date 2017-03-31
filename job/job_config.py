@@ -16,13 +16,14 @@ sample_to_compare = "TestBeam" ## G4 or TestBeam
 
   # Output directory
 work = '/afs/cern.ch/work/'+user[0]+'/'+user
-outdir = work + '/SciFiTest/PhotonPerMeVScan_Improved'
+outdir = work + '/SciFiTest'
 
   # Frameworks locations
 gauss = cmtuser+'/GaussDev'
-boole = "/afs/cern.ch/work/p/pluca/SciFiDevelopment/BOOLE/BOOLE_v30r2/build.x86_64-slc6-gcc49-opt/"
+boole = "/afs/cern.ch/work/p/pluca/SciFiDevelopment/BOOLE/BOOLE_v31r0/build.x86_64-slc6-gcc49-opt/"
 
 ## Data to compare (don't change if not specifically needed)
+
 #testbeam_data  = "/eos/lhcb/wg/SciFi/Simulation/Testbeam/TestbeamData/20160922/"    ## 2015
 #testbeam_data  = "/afs/cern.ch/work/p/pluca/public/SciFi/Testbeam_Nov2016/renamed/"  ## 2016
 testbeam_data  = "/afs/cern.ch/work/p/pluca/public/SciFi/Testbeam_Nov2016/renamed_sescher/"  ## 2016

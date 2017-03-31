@@ -311,6 +311,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-n","--niter", type=int, default=1)
     parser.add_argument("-f","--forcenpts", action='store_true')
+    parser.add_argument("-l","--local", action='store_true')
     parser.add_argument("-d","--digi", default="Detailed" )
     parser.add_argument("variables",default = "[Var('CrossTalkProb',0.20,0.40,19)]")
     opts = parser.parse_args()
@@ -318,8 +319,8 @@ if __name__ == '__main__':
     variables = eval(opts.variables)
 
     optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, digitype = opts.digi)
-    optimizer.set_launch_mode("batch")
-    #optimizer.set_launch_mode("local")
+    if opts.local : optimizer.set_launch_mode("local")
+    else : optimizer.set_launch_mode("batch")
 
     for v in variables :
         optimizer.add_variable(v.name,v.xmin,v.xmax,v.nbins)
