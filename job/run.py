@@ -93,7 +93,7 @@ for f in files :
 
 ## Clusterising
 files = glob(outdir+"/digitised/testbeam*.root")
-if opts.doprint : print "Clastering ", len(files), " files."
+if opts.doprint : print "Clustering ", len(files), " files."
 
 for f in files :
 
@@ -123,7 +123,7 @@ for f in files :
     testbeam_file += "-angle" + ang
     testbeam_file += "_datarun_ntuple_corrected_clusterAnalyis.root"
     
-    g4file = "'"+jc.g4_sim+"/statFile_CT_PosA_{ang}degree.root'".format(ang=ang)
+    g4file = "'"+jc.g4_sim+"/statFile_CT_PosA_{ang}degreepi-_-120_20000_5,6_5,5.root'".format(ang=ang)
 
     curcmd = compare_cmd.format(script=compare_script,simf=f,outdir=outdir+"/comparisons/",g4f=g4file,tbf=testbeam_file)
     #curcmd = compare_cmd.format(script=compare_script,simf=f,outdir=outdir+"/comparisons/",tbf=testbeam_file)

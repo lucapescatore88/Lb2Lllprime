@@ -9,7 +9,7 @@ parser.add_argument('-f', '--files', type=str, help="Path and name of the input 
                     default="/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/testbeam_simulation_position_a_at_0deg.sim")
 parser.add_argument('-i', '--interactive', action = "store_true", default=False)
 parser.add_argument('-s', '--storeTestbeam', action = "store_true", default=False)
-parser.add_argument('-n', '--nickname', type=str, default="effective")
+parser.add_argument('-n', '--nickname', type=str, default="improved")
 parser.add_argument('-r', '--resultPath', type=str, default="")
 parser.add_argument('-d', '--DDDBtag', type=str, default='dddb-20160304')
 parser.add_argument('-c', '--CondDBtag', type=str, default='sim-20150716-vc-md100')
@@ -54,6 +54,7 @@ CondDB().Upgrade = True
 #CondDB().addLayer(dbFile = "/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/DDDB_FT61_noEndplug.db", dbName = "DDDB")
 CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT61_noEndplug.db", dbName = "DDDB")
 
+
 LHCbApp().DDDBtag = cfg.DDDBtag
 LHCbApp().CondDBtag = cfg.CondDBtag
 
@@ -82,9 +83,9 @@ SiPMResponse().ElectronicsResponse = "flat"#Use flat SiPM time response
 
 from Configurables import MCFTAttenuationTool
 att = MCFTAttenuationTool()
-att.ShortAttenuationLength = 682.5 # 200mm  # TestBeam: HD1 468.6, HD2 896.3
-att.LongAttenuationLength = 4796   # 4700mm  # TestBeam: HD1 4688, HD2 4904
-att.FractionShort = 0.34           # 0.18 # TestBeam: HD1 0.273, HD2 0.406
+att.ShortAttenuationLength = {ShortAttLgh}
+att.LongAttenuationLength = {LongAttLgh}
+att.FractionShort = {ShortFraction}
 
 # Make sure I always hit unirradiated zone
 att.XMaxIrradiatedZone = 999999999999.#2000
@@ -94,21 +95,22 @@ att.YMaxIrradiatedZone = -1.#500
 
 from Configurables import MCFTPhotonTool
 photon_tool = MCFTPhotonTool()
-photon_tool.PhotonsPerMeV = 130
+photon_tool.PhotonsPerMeV = {PhotonsPerMeV}
 
 from Configurables import MCFTDistributionChannelTool
 channel_tool = MCFTDistributionChannelTool()
+channel_tool.GaussianSharingWidth = {PhotonWidth}
 #channel_tool.LightSharing = "old"
 
 from Configurables import MCFTDistributionFibreTool
 fibre_tool = MCFTDistributionFibreTool()
-fibre_tool.CrossTalkProb = 0.30
+fibre_tool.CrossTalkProb = {CrossTalkProb}
 
 from Configurables import MCFTPhotoelectronTool
 pe_tool = MCFTPhotoelectronTool()
 
 from Configurables import MCFTDepositCreator
-MCFTDepositCreator().SimulationType = "effective"
+MCFTDepositCreator().SimulationType = "improved"
 MCFTDepositCreator().SpillNames = ["/"]
 MCFTDepositCreator().SpillTimes = [0.0]
 MCFTDepositCreator().SimulateNoise = False
@@ -158,7 +160,7 @@ hist.dump()
 
 resultPath = cfg.resultPath
 
-fileName = (files[0].split("/")[-1]).replace(".sim", "_{0}.root".format(cfg.nickname))
+fileName = (files[0].split("/")[-1]).replace(".sim", "_{{0}}.root".format(cfg.nickname))
 
 print("Outputfile: " + fileName)
 
@@ -170,7 +172,7 @@ outputTrees = []
 outputFile.cd()
 for layerNumber in layers:
   outputTrees.append(R.TTree("layer_" + str(layerNumber), "layer_" + str(layerNumber) ) )
-  sipmValPtr_thisLayer = {}
+  sipmValPtr_thisLayer = {{}}
   for sipmID in sipmIDs:
     arr = []
     for sipmChan in xrange(128):

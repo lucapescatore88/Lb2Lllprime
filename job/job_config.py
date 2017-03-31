@@ -15,13 +15,13 @@ sample_to_compare = "TestBeam" ## G4 or TestBeam
 ## Obligatory paths to be set!
 
   # Output directory
-outdir = '/afs/cern.ch/work/'+user[0]+'/'+user
-#outdir += '/SciFi_Optimisation/CrossTalk_8Fibers_Fix_PhotonWidth0.25'
-outdir += '/public/SciFi/digi_PhotonPerMeV_forDisplay'
+work = '/afs/cern.ch/work/'+user[0]+'/'+user
+outdir = work + '/SciFiTest/PhotonPerMeVScan_Improved'
 
   # Frameworks locations
 gauss = cmtuser+'/GaussDev'
-boole = cmtuser+"/BooleDev_v30r1"
+#boole = cmtuser+"/BooleDev_v30r1"
+boole = work+"/SciFiDevelopment/BOOLE/BOOLE_v31r0/build.x86_64-slc6-gcc49-opt"
 
 
 ## Data to compare (don't change if not specifically needed)

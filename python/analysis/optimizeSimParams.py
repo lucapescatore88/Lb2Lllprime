@@ -35,13 +35,14 @@ class OptimizeParams :
     ntotpoints = 1
     launch_modes = ["local","interactive","batch"]
 
-    def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", forcenpts = False) :
+    def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", forcenpts = False, digitype = "Detailed") :
         self.outdir = outdir
         self.niterations = niter
         self.mode = mode
         self.launch_mode = launch_mode
         self.ngenfiles = len(glob(jc.simfiles+"/*.sim"))
         self.forcenpts = forcenpts
+        self.digitype = digitype
 
     def set_launch_mode(self,mode) :
         if mode in self.launch_modes :
@@ -134,7 +135,7 @@ class OptimizeParams :
                 vdict[vname] = d
             
             if not os.path.exists(outdir) : os.mkdir(outdir)
-            config_file = configure_params(vdict,outdir+"/")
+            config_file = configure_params(vdict,outdir+"/",digifile="runDigitisation"+self.digitype+"_template.py")
             
             hasoutput = int(len(glob(outdir+"/comparisons/chi*.txt")) == self.ngenfiles)
             if hasoutput and self.mode != "force" : continue
@@ -299,28 +300,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-n","--niter", type=int, default=1)
     parser.add_argument("-f","--forcenpts", action='store_true')
+    parser.add_argument("-d","--digi", default="Detailed" )
     parser.add_argument("variables",default = "[Var('CrossTalkProb',0.20,0.40,19)]")
     opts = parser.parse_args()
 
     variables = eval(opts.variables)
 
-    optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts)
-    #optimizer.set_launch_mode("interactive")
+    optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, digitype = opts.digi)
     optimizer.set_launch_mode("batch")
     #optimizer.set_launch_mode("local")
 
     for v in variables :
         optimizer.add_variable(v.name,v.xmin,v.xmax,v.nbins)
-
-    #optimizer.add_variable("PhotonWidth",0.22,0.32,9,limits=[0.,1.])
-    
-    #optimizer.add_variable("ShortAttLgh",100,1000,3, limits=[0.,500.])
-    #optimizer.add_variable("LongAttLgh",4000,5500,3, limits=[3000.,6000.])
-    #optimizer.add_variable("ShortFraction",0.,0.7,3, limits=[0.,1.])
-    
-    #optimizer.add_variable("CrossTalkProb",0.20,0.40,19, limits=[0.,1.])
-
-    #optimizer.add_variable("PhotonsPerMeV",129.,135,5, limits=[125.,135.])
 
     optimizer.optimize()
 

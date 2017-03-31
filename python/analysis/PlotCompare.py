@@ -1,27 +1,31 @@
 #!/usr/bin/python
-#Author : BELLEE Violaine
-#Date : 2015/04/22                                                                                                                                           
+#Author : PESCATORE Luca, BELLEE Violaine
+#Date : 2017/03/07                                                                                                                                           
 #Used to compare cluster observables between the geant 4 'stand-alone' simulation and boole simulation
 
 import argparse
-import ROOT
+from ROOT import *
 import math
 
-colors = [1,4,2]
+gROOT.ProcessLine('.x $SCIFITESTBEAMSIMROOT/job/lhcbStyle.C')
+
+colors = [1,4,2,3,7,6,8,9]
 
 def findMax(tree,variable) :
 
     tree.Draw(variable+">>htest")
-    h = ROOT.gPad.GetPrimitive("htest")
+    h = gPad.GetPrimitive("htest")
     binmax = h.GetMaximumBin()
     return h.GetXaxis().GetBinCenter(binmax)
 
 def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_observable, title, beginning, end, numbins, noplot):
 
     histos = {}
+    boolehisto = None
     for it,t in enumerate(trees) :
-        name = t[0].replace(" ","")
-        h = ROOT.TH1F(name,'',numbins, beginning, end)
+        key = t[0].replace(" ","")
+        name = key+observable
+        h = TH1F(name,name,numbins, beginning, end)
         h.SetLineColor(colors[it])
         h.SetLineWidth(2)
         h.SetStats(False)
@@ -29,43 +33,40 @@ def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_obse
         h.SetMarkerColor(colors[it])
         h.Sumw2()
         h.SetOption("E")
-        histos[name] = h
+        histos[key] = h
+        if 'Boole' in name and boolehisto is None :
+            boolehisto = h
+            print "Simulaiton histogram for comparisons is", name.replace(observable,"")
 
-    leg = ROOT.TLegend(0.6,0.7,0.95,0.89)
+    leg = TLegend(0.6,0.7,0.95,0.89)
     for i,t in enumerate(trees) :
-        name = t[0].replace(" ","")
+        name = t[0].replace(" ","")+observable
         if "Geant" in t[0] : t[1].Draw(geant_observable+'>>'+name)
         elif "Beam" in t[0] :
-            print t[0], observable
             #curmax = findMax(t[1],"distance_from_track")
             t[1].Draw(geant_observable+'>>'+name)#,"abs(distance_from_track - {curmax}) < 100".format(curmax=curmax))
-            #print observable
         else : t[1].Draw(observable+'>>'+name)
-        leg.AddEntry(histos[name],t[0],"l")
+        leg.AddEntry(histos[name.replace(observable,"")],t[0],"l")
 
     chi2ndf = -1
     chi2ndf_testbeam = -1
-    
-    if "TestBeamdata" in histos :
-        #print "TestBeamdata"
-        chi2ndf_testbeam = histos["TestBeamdata"].Chi2Test(histos["Boolesimulation"],"CHI2/NDF")
-    if "Geant4simulation" in histos :
-        #print "Geant4simulation"
-        chi2ndf = histos["Geant4simulation"].Chi2Test(histos["Boolesimulation"],"CHI2/NDF")
+
+    if "TestBeamdata" in histos and boolehisto is not None :
+        chi2ndf_testbeam = histos["TestBeamdata"].Chi2Test(boolehisto,"CHI2/NDF")
+    if "Geant4simulation" in histos and boolehisto is not None :
+        chi2ndf = histos["Geant4simulation"].Chi2Test(boolehisto,"CHI2/NDF")
 
     if noplot : return chi2ndf, chi2ndf_testbeam, numbins, observable
 
-    hs = ROOT.THStack ("hs",'')
-
+    hs = THStack ("hs",'')
     for hn,h in histos.iteritems() :
         h.Scale(1./h.Integral())
         hs.Add(h)
-
     hs.Print()
 
-    outfile = ROOT.TFile(outputdirectory+outputname+"_"+observable+".root","RECREATE")
-    canvas = ROOT.TCanvas("canvas","",1000,700)
-    ROOT.gStyle.SetOptStat("")
+    outfile = TFile(outputdirectory+outputname+"_"+observable+".root","RECREATE")
+    canvas = TCanvas()
+    gStyle.SetOptStat("")
 
     hs.Draw("nostack")
     hs.GetXaxis().SetTitle(title)
@@ -79,7 +80,8 @@ def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_obse
     hs.GetYaxis().SetTitleSize(0.045)
 
     leg.Draw("same")
-    canvas.SaveAs(outputdirectory+outputname+'_'+observable+'.png')
+    canvas.Print(outputdirectory+outputname+'_'+observable+'.png')
+    canvas.Print(outputdirectory+outputname+'_'+observable+'.C')
     canvas.Write()
     outfile.Write()
     outfile.Close()
@@ -95,7 +97,8 @@ if __name__ == '__main__':
     parser.add_argument("-ni", "--nickname" , default="")
     parser.add_argument("-d" , "--outputdirectory" , default="")
     parser.add_argument("-testbf", "--testbf" , default=None, help = 'Name of the testbeam data file')
-    parser.add_argument("-simf", "--simf" , default=None, required=True, help = 'Name of the simulation file')
+    parser.add_argument("-simf", "--simf" , default=None, help = 'Name of the simulation file')
+    parser.add_argument("-simconfig", "--simconfig" , default=None, help = 'File contaiing config dictionary for more than one simulation')
     parser.add_argument("-g4f", "--g4f" , default=None , help = 'Name of the Geant4 simulation file')
     parser.add_argument("-testbt", "--testbt" , default="clusterAnalysis")
     parser.add_argument("-simt", "--simt" , default="clusterAnalysis")
@@ -112,21 +115,31 @@ if __name__ == '__main__':
 
     ### Define files to be read and beginning and end of the histograms
 
-    outputname = (args.simf.split("/")[-1]).replace(".root", "_{0}".format(args.nickname))
+    outputname = "comparison"
     outputdirectory = args.outputdirectory
     
     trees = []
 
     if args.testbf is not None :
-        trees.append( ( "Test Beam data", ROOT.TChain(args.testbt)) )
+        trees.append( ( "Test Beam data", TChain(args.testbt)) )
         trees[-1][1].AddFile(args.testbf)
         print args.testbf
+
     if args.simf is not None :
-        trees.append( ("Boole simulation", ROOT.TChain(args.simt)) )
+        trees.append( ("Boole simulation", TChain(args.simt)) )
         trees[-1][1].AddFile(args.simf)
+        outputname = (args.simf.split("/")[-1]).replace(".root", "_{0}".format(args.nickname))
         print args.simf
+    elif args.simconfig is not None:
+        simfiles =  eval(open(args.simconfig).read())
+        for lab,f in simfiles.iteritems() :
+            trees.append( (lab, TChain(args.simt)) )
+            trees[-1][1].AddFile(f)
+            outputname = (f.split("/")[-1]).replace(".root", "_{0}".format(args.nickname))
+            print f
+
     if args.g4f is not None :
-        trees.append( ("Geant4 simulation", ROOT.TChain(args.g4t)) )
+        trees.append( ("Geant4 simulation", TChain(args.g4t)) )
         trees[-1][1].AddFile(args.g4f)
 
     chi2s = []
