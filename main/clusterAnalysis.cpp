@@ -458,7 +458,7 @@ int main(int argc, char *argv[])
         hitEffFile << getPositionFromFileName(file2analyse) << ",";
         hitEffFile << lightAndEff.first.GetVal() << ",";
         hitEffFile << lightAndEff.first.GetError() << ",";
-        hitEffFile << lightAndEff.second.GetVal() << "," 
+        hitEffFile << lightAndEff.second.GetVal() << ","; 
         hitEffFile << lightAndEff.second.GetError() << "\n";
     }
 
