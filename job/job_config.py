@@ -3,41 +3,31 @@
 ## Description: script that sets up options to run a digitisation + clusterisation + comparison job
 
 import os
-
-#host = os.environ["HOSTNAME"] ## Detects if you are on lxplus
-host = "lxplus"
-repo = os.environ["SCIFITESTBEAMSIMROOT"]
-
-## Add here optional paths
-
-home = os.environ['HOME']
+repo = os.getenv("SCIFITESTBEAMSIMROOT")
+home = os.getenv('HOME')
+user = os.getenv('USER')
 cmtuser = home+'/cmtuser/'
 
-if "lxplus" in host :
-    work = os.environ['WORK']
-    
-## Obligatory paths
+## FOR USERS
 
 sample_to_compare = "TestBeam" ## G4 or TestBeam
 
-outdir = "/panfs/pescator/SciFiSim/optimise/"
-if "lxplus" in host :
-    outdir = work + "/SciFiSim/optimise/1D_CrossTalkProb"
-#     outdir = work + "/SciFiSim/optimise/BFGS/"
+## Obligatory paths to be set!
 
-#Frameworks locations
+  # Output directory
+work = '/afs/cern.ch/work/'+user[0]+'/'+user
+outdir = work + '/SciFiTest'
+
+  # Frameworks locations
 gauss = cmtuser+'/GaussDev'
-boole = "/afs/cern.ch/work/p/pluca/SciFiDevelopment/BOOLE/BOOLE_v30r2/build.x86_64-slc6-gcc49-opt/"
+boole = "/afs/cern.ch/work/p/pluca/SciFiDevelopment/BOOLE/BOOLE_v31r0/build.x86_64-slc6-gcc49-opt/"
 
-#Data to compare
-if "lxplus" in host :
-    testbeam_data  = "/eos/lhcb/wg/SciFi/Simulation/Testbeam/TestbeamData/20160922/"
-    g4_sim = "/afs/cern.ch/user/s/sescher/public/"
-    simfiles = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/20161012/"
-else :
-    testbeam_data  = "/panfs/pescator/SciFiSim/data/TestBeamData/"
-    g4_sim = "/panfs/pescator/SciFiSim/data/G4Data/"
-    simfiles = "/panfs/pescator/SciFiSim/data/SimFiles/"
+## Data to compare (don't change if not specifically needed)
 
+#testbeam_data  = "/eos/lhcb/wg/SciFi/Simulation/Testbeam/TestbeamData/20160922/"    ## 2015
+#testbeam_data  = "/afs/cern.ch/work/p/pluca/public/SciFi/Testbeam_Nov2016/renamed/"  ## 2016
+testbeam_data  = "/afs/cern.ch/work/p/pluca/public/SciFi/Testbeam_Nov2016/renamed_sescher/"  ## 2016
+g4_sim = "/afs/cern.ch/user/s/sescher/public/Simulation/crosstalk/"
+simfiles = "/afs/cern.ch/work/p/pluca/public/SciFi/pguns_reduced/sim/"
 
 

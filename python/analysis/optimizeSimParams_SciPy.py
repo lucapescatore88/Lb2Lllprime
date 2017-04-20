@@ -4,6 +4,8 @@
 ## performing a grid search to find best parameters. Uses scipy.optimize.
 ## N.B.: Requires setting up the enviroment by source job/setup.sh
 
+## This scripts is obsolete and not working any more. It is just kept for reference.
+
 from param_config import configure_params
 import os, time, shutil, sys
 import subprocess as sb

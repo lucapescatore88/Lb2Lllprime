@@ -6,7 +6,7 @@ from glob import glob
 
 parser = argparse.ArgumentParser(description='Plot cluster properties from data and simulation.')
 parser.add_argument('-f', '--files', type=str, help="Path and name of the input .sim file, the * can be used as in /home/files/njob*/file.sim",
-                    default="/afs/cern.ch/work/j/jwishahi/public/forViolaine/20160615_testbeam_ttekampe/1/*/output/testbeam_simulation_position*.sim")
+                    default="/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/testbeam_simulation_position_a_at_0deg.sim")
 parser.add_argument('-i', '--interactive', action = "store_true", default=False)
 parser.add_argument('-s', '--storeTestbeam', action = "store_true", default=False)
 parser.add_argument('-n', '--nickname', type=str, default="")
@@ -52,9 +52,9 @@ LHCbApp().Simulation = True
 #LHCbApp().Histograms = 'Default'
 CondDB().Upgrade = True
 ## New numbering scheme. Remove when FT60 is in nominal CondDB.
-#CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT61.db", dbName = "DDDB")
-#CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60.db", dbName = "DDDB")
-CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT60_noEndPlug.db", dbName = "DDDB")
+#CondDB().addLayer(dbFile = "/afs/cern.ch/work/j/jwishahi/public/SciFiDev/DDDB_FT60.db", dbName = "DDDB")
+#CondDB().addLayer(dbFile = "/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/DDDB_FT61_noEndplug.db", dbName = "DDDB")
+CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT61_noEndplug.db", dbName = "DDDB")
 
 LHCbApp().DDDBtag = cfg.DDDBtag
 LHCbApp().CondDBtag = cfg.CondDBtag
@@ -81,7 +81,7 @@ appConf.TopAlg += [
 
 
 from Configurables import SiPMResponse
-SiPMResponse().useNewResponse = 2#Use flat SiPM time response 
+SiPMResponse().ElectronicsResponse = "flat"#Use flat SiPM time response 
 
 from Configurables import MCFTAttenuationTool
 att = MCFTAttenuationTool()
@@ -94,8 +94,14 @@ att.XMaxIrradiatedZone = 999999999999.#2000
 att.YMaxIrradiatedZone = -1.#500
 
 from Configurables import MCFTDepositPathFracInFibreTool
+<<<<<<< HEAD
+pathtool = MCFTDepositPathFracInFibreTool()
+pathtool.CrossTalkProb = 0.192
+pathtool.CTModel = "4Fibers"
+=======
 #pathtool = MCFTDepositPathFracInFibreTool()
 # pathtool.CrossTalkProb = 0.04
+>>>>>>> ea9fb09492013cc17e5d180d02718704b66afed7
 
 from Configurables import MCFTDepositDistributionTool
 
@@ -104,7 +110,6 @@ distributiontool.MinFractionForSignalDeposit = 0.005
 distributiontool.ImprovedDigitisation = True
 distributiontool.NumOfNeighbouringChannels = 3
 distributiontool.LightSharing = "Gaussian"
-#distributiontool.GaussianSharingWidth = 0.5
 distributiontool.GaussianSharingWidth = 0.5
 #The above option corresponds to the fraction of the channel width
 #covered by the gaussian distribution of photons at the end of the
@@ -112,7 +117,12 @@ distributiontool.GaussianSharingWidth = 0.5
 #Options if old light sharing is used
 distributiontool.OldLightSharingCentral = 0.68
 distributiontool.OldLightSharingEdge = 0.5
+<<<<<<< HEAD
+distributiontool.addTool(pathtool)
+
+=======
 #distributiontool.addTool(pathtool)
+>>>>>>> ea9fb09492013cc17e5d180d02718704b66afed7
 
 from Configurables import MCFTDepositCreator
 
@@ -122,7 +132,7 @@ MCFTDepositCreator().addTool(att)
 MCFTDepositCreator().addTool(distributiontool)
 MCFTDepositCreator().UseAttenuation = True
 MCFTDepositCreator().SimulateNoise = False
-MCFTDepositCreator().PhotonsPerMeV = 120.
+MCFTDepositCreator().PhotonsPerMeV = 130.
 
 from Configurables import MCFTDigitCreator
 tof = 25.4175840541
@@ -146,7 +156,6 @@ dre.DataOnDemand = True
 
 lhcbApp = LHCbApp()
 lhcbApp.Simulation = True
-
 
 files = []
 #For position A and 10degrees, the ganga job number is 1. Change this number to access different beam positions
@@ -195,14 +204,7 @@ while True:
     break
 
   nHits += len(evt["MC/FT/Hits"])
-#  hits = evt["MC/FT/Hits"]
-#  for hit in hits:
-#    print hit.entry().Z()
-#    z_mc_hit[0] = float(hit.entry().Z())
-#    y_mc_hit[0] = float(hit.entry().Y())
-#    x_mc_hit[0] = float(hit.entry().X())
-#    tree_hits.Fill()
-
+  
   digits = evt['/Event/MC/FT/Digits'].containedObjects()
   for digit in digits:
     
@@ -216,7 +218,7 @@ while True:
         
     if jump : continue 
     channel = digit.channelID()
-    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 :
+    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 and channel.mat()==0:
       sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.photoElectrons()
  
   for t in outputTrees:
@@ -228,10 +230,4 @@ for t in outputTrees:
   t.Write()
 outputFile.Close()
 
-#outputFileHits.cd()
-#tree_hits.Write()
-#outputFileHits.Close()
 
-
-
-print("number of hits found: {0}".format(nHits))

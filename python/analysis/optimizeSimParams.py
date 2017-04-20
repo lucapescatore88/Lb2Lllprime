@@ -10,14 +10,19 @@ import subprocess as sb
 from glob import glob
 import ROOT, math
 from array import array
+import argparse
 
-repo = os.environ["SCIFITESTBEAMSIMROOT"]
+repo = os.getenv("SCIFITESTBEAMSIMROOT")
+if repo is None :
+    print "Please setup the environment befire running!"
+    sys.exit()
+
 from param_config import configure_params
 import job_config as jc
-from job.utils.submit import launch_interactive
 from job.utils.value import Value
 from job.utils.wheel import Wheel
 from job.utils.math_functions import *
+from job.utils.submit import launch_interactive
 
 wheel = Wheel()
 
@@ -30,11 +35,14 @@ class OptimizeParams :
     ntotpoints = 1
     launch_modes = ["local","interactive","batch"]
 
-    def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local") :
+    def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", forcenpts = False, digitype = "Detailed") :
         self.outdir = outdir
         self.niterations = niter
         self.mode = mode
         self.launch_mode = launch_mode
+        self.ngenfiles = len(glob(jc.simfiles+"/*.sim"))
+        self.forcenpts = forcenpts
+        self.digitype = digitype
 
     def set_launch_mode(self,mode) :
         if mode in self.launch_modes :
@@ -44,7 +52,7 @@ class OptimizeParams :
 
     def add_variable(self,name,mini,maxi,nbins=9,limits = None) :
         
-        if nbins%2==0 :
+        if nbins%2==0 and not self.forcenpts:
             print "The number of bins must be odd! Adding one bin."
             nbins += 1
         self.variables[name] = { "range" : [mini,maxi], "scanrange": [mini,maxi], "nbins" : nbins  }
@@ -78,8 +86,8 @@ class OptimizeParams :
         
     def launch(self,outdir,config_file = None):
 
-        host = os.environ["HOSTNAME"]
-        is_lxplus = ( "lxplus" in host)
+        host = os.getenv("HOSTNAME")
+        is_lxplus = ( "lxplus" in host )
         if not is_lxplus and "lphe" not in host :
             print "This script is made to run only on lxplus or EPFL cluster. Go there!"
         if not is_lxplus and self.launch_mode == "interactive" :
@@ -88,31 +96,32 @@ class OptimizeParams :
          
         ## Command for local serial running
         if self.launch_mode == "local" :
-            print "python "+repo+"/job/run.py " + outdir + "/ " + config_file
-            sb.call("python "+repo+"/job/run.py " + outdir + "/ " + config_file,shell=True)
+            print "python "+repo+"/job/run.py --digiscript {cfile} --outdir {odir}".format(odir=outdir,cfile=config_file)
+            sb.call("python "+repo+"/job/run.py --digiscript {cfile} --outdir {odir}".format(odir=outdir,cfile=config_file),shell=True)
+            print "Done"
             
-        ## Command for prallel running on lxplus bach system
-        elif self.launch_mode == "batch" :
-
-            if is_lxplus : 
+        elif is_lxplus :
+        
+            ## Command for parallel running on lxplus in interactive mode
+            if self.launch_mode == "interactive" :
+                launch_interactive(outdir)
+            
+            ## Command for prallel running on lxplus bach system
+            else :
                 batch_cmd = "bsub -R 'pool>30000' -o {dir}/out -e {dir}/err -q {queue} -J {jname} < {dir}/run.sh"
                 batch_cmd = batch_cmd.format(dir=outdir,queue="1nd",jname=outdir)
-            else :
-                print "Can't launch in natch mode"
-                sys.exit()
+                print batch_cmd
+                sb.call(batch_cmd,shell=True)
 
-            sb.call(batch_cmd,shell=True)
-
-        ## Command for parallel running on lxplus in interactive mode
-        elif self.launch_mode == "interactive" :
-            launch_interactive(outdir)
+        else :
+            print "You are not on Lxplus, you can't run in batch mode"
 
     def send_jobs(self) :
 
         if self.mode == "relaunch" and self.launch_mode != "local":
             dirs = glob(self.outdir+"/*/*")
             for d in dirs : 
-                if len(glob(d+"/comparisons/chi*.txt")) == 6 : continue
+                if len(glob(d+"/comparisons/chi*.txt")) == self.ngenfiles : continue
                 print "Resubmiting:", d
                 self.launch(d)
             return
@@ -126,17 +135,17 @@ class OptimizeParams :
                 vdict[vname] = d
             
             if not os.path.exists(outdir) : os.mkdir(outdir)
-            config_file = configure_params(vdict,outdir+"/")
+            config_file = configure_params(vdict,outdir+"/",digifile="runDigitisation"+self.digitype+"_template.py")
             
-            hasoutput = int(len(glob(outdir+"/comparisons/chi*.txt")) == 6)
-            if hasoutput and self.mode!="force"  : continue
+            hasoutput = int(len(glob(outdir+"/comparisons/chi*.txt")) == self.ngenfiles)
+            if hasoutput and self.mode != "force" : continue
             
             print "\n******************\n Running analysis for point ({0}/{1}): ".format(ip+1,self.ntotpoints)
             print vdict
 
             frun = open(outdir + "/run.sh","w")
             frun.write("source "+repo+"/job/setup.sh &> setuplog\n")
-            frun.write("python "+repo+"/job/run.py " + outdir + "/ " + config_file)
+            frun.write("python "+repo+"/job/run.py --digiscript {cfile} --outdir {odir}".format(odir=outdir,cfile=config_file))
             frun.close()
 
             self.launch(outdir,config_file)
@@ -164,7 +173,7 @@ class OptimizeParams :
         while True :
             time.sleep(2)
             files = glob(self.outdir+"/"+str(self.curiter)+"/*/comparisons/chi2*.txt")
-            nfiles = math.trunc( len(files) / 6.)
+            nfiles = math.trunc( len(files) / self.ngenfiles )
             w = wheel.increment()
             msg = "\r  "+w+"   Iteration {0}/{1}, jobs finished {2}/{3}"
             sys.stdout.write(msg.format(self.curiter,self.niterations,nfiles,self.ntotpoints))
@@ -172,7 +181,7 @@ class OptimizeParams :
             if nfiles > 0 and nfiles % int( self.ntotpoints ) == 0 : break
 
         print "\nIteration {0}/{1}. Production finished. Calculating chi2.......".format(self.curiter,self.niterations)
-        for d in glob(self.outdir+"/"+str(self.curiter)+"/*") :
+        for d in glob(self.outdir+"/"+str(self.curiter)+"/opt*") :
             values = []
             pos = d.find("options_")
             clean_name = d[pos+8:]
@@ -184,8 +193,11 @@ class OptimizeParams :
             chi2files = glob(d+"/comparisons/chi2*.txt")
             if len(chi2files) == 0: print d
             for f in chi2files :
-                #line = open(f).readlines()[0]  ## G4-Boole chi2
-                line = open(f).readlines()[1]   ## Testbeam-Boole chi2
+                
+                if jc.sample_to_compare == "G4" :
+                    line = open(f).readlines()[0]  ## G4-Boole chi2
+                else :
+                    line = open(f).readlines()[1]   ## Testbeam-Boole chi2
                 elements = line.split()
                 chi2 += float(elements[0])
             
@@ -194,9 +206,14 @@ class OptimizeParams :
 
     def optimize(self) :
 
+        print "Using variables:"
+        for vn,v in self.variables.iteritems() :
+            print vn, ":", v['range'], ", nbins: ", v['nbins']
+
         if os.path.exists(self.outdir) :
             dirs = glob(self.outdir+"/*")
             if len(dirs) > 0 :
+                print "Using output directory:", self.outdir
                 choice = raw_input("Chosen output dir is not empty. Want to clean it up before proceeding? [y/n]\n")
                 if choice == 'y' :
                     shutil.rmtree(self.outdir)
@@ -279,21 +296,34 @@ def slice_best(i,mylist) :
 
     return best_list
 
+
+class Var :
+    def __init__(self,name,xmin,xmax,nbins=9) :
+        self.name  = name
+        self.xmin  = xmin
+        self.xmax  = xmax
+        self.nbins = nbins
+
 if __name__ == '__main__': 
 
     print "Optimizing..."
 
-    optimizer = OptimizeParams(jc.outdir,niter = 3)
-    optimizer.set_launch_mode("interactive")
-    #optimizer.set_launch_mode("local")
-    
-    optimizer.add_variable("PhotonWidth",0.,0.7,3, limits=[0.,2.])
-    
-    optimizer.add_variable("ShortAttLgh",100,1000,3, limits=[0.,500.])
-    optimizer.add_variable("LongAttLgh",4000,5500,3, limits=[3000.,6000.])
-    optimizer.add_variable("ShortFraction",0.,0.7,3, limits=[0.,1.])
-    
-    #optimizer.add_variable("CrossTalkProb",0.,0.3,9, limits=[0.,1.])
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n","--niter", type=int, default=1)
+    parser.add_argument("-f","--forcenpts", action='store_true')
+    parser.add_argument("-l","--local", action='store_true')
+    parser.add_argument("-d","--digi", default="Detailed" )
+    parser.add_argument("variables",default = "[Var('CrossTalkProb',0.20,0.40,19)]")
+    opts = parser.parse_args()
+
+    variables = eval(opts.variables)
+
+    optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, digitype = opts.digi)
+    if opts.local : optimizer.set_launch_mode("local")
+    else : optimizer.set_launch_mode("batch")
+
+    for v in variables :
+        optimizer.add_variable(v.name,v.xmin,v.xmax,v.nbins)
 
     optimizer.optimize()
 
