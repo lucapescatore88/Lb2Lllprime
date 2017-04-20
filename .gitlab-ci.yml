@@ -7,10 +7,10 @@ build:
   script:
     - export USER=TestUser
     - source /cvmfs/lhcb.cern.ch/group_login.sh --no-userarea
-    - source /cvmfs/lhcb.cern.ch/lib/lhcb/LBSCRIPTS/LBSCRIPTS_v8r6p7/InstallArea/scripts/SetupProject.sh Boole
+    - source setup.sh
     - export CC=`which gcc`
     - export CXX=`which g++`
     - mkdir build
     - cd build
-    - cmake ..
+    - run_cmake
     - make
