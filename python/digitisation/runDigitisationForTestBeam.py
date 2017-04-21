@@ -1,20 +1,27 @@
 # Run Boole with the standard implementation (using the -s option)
 # or the improved implementation
 
-import argparse
+import argparse, pickle
 from glob import glob
+from setupBooleForDigitisation import *
+from param_config import get_params
 
 parser = argparse.ArgumentParser(description='Plot cluster properties from data and simulation.')
 parser.add_argument('-f', '--files', type=str, help="Path and name of the input .sim file, the * can be used as in /home/files/njob*/file.sim",
                     default="/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/testbeam_simulation_position_a_at_0deg.sim")
 parser.add_argument('-i', '--interactive', action = "store_true", default=False)
 parser.add_argument('-s', '--storeTestbeam', action = "store_true", default=False)
-parser.add_argument('-n', '--nickname', type=str, default="effective")
+parser.add_argument('-t', '--digitype', type=str, default="improved")
+parser.add_argument('-x', '--params', type=str, default="")
+parser.add_argument('-p', '--pacific', action="store_true")
 parser.add_argument('-r', '--resultPath', type=str, default="")
 parser.add_argument('-d', '--DDDBtag', type=str, default='dddb-20160304')
 parser.add_argument('-c', '--CondDBtag', type=str, default='sim-20150716-vc-md100')
 
 cfg = parser.parse_args()
+
+if cfg.params == "" : params = get_params()
+else : params = pickle.load(open(cfg.params))
 
 import GaudiPython as GP
 from GaudiConf import IOHelper
@@ -54,6 +61,7 @@ CondDB().Upgrade = True
 #CondDB().addLayer(dbFile = "/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/DDDB_FT61_noEndplug.db", dbName = "DDDB")
 CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT61_noEndplug.db", dbName = "DDDB")
 
+
 LHCbApp().DDDBtag = cfg.DDDBtag
 LHCbApp().CondDBtag = cfg.CondDBtag
 
@@ -76,54 +84,7 @@ appConf.TopAlg += ["MCFTDepositCreator",
 #Configure Boole
 ######################################
 
-
-from Configurables import SiPMResponse
-SiPMResponse().ElectronicsResponse = "flat"#Use flat SiPM time response 
-
-from Configurables import MCFTAttenuationTool
-att = MCFTAttenuationTool()
-att.ShortAttenuationLength = {ShortAttLgh}
-att.LongAttenuationLength = {LongAttLgh}
-att.FractionShort = {ShortFraction}
-
-# Make sure I always hit unirradiated zone
-att.XMaxIrradiatedZone = 999999999999.#2000
-att.YMaxIrradiatedZone = -1.#500
-
-
-
-from Configurables import MCFTPhotonTool
-photon_tool = MCFTPhotonTool()
-photon_tool.PhotonsPerMeV = {PhotonsPerMeV}
-
-from Configurables import MCFTDistributionChannelTool
-channel_tool = MCFTDistributionChannelTool()
-channel_tool.GaussianSharingWidth = {PhotonWidth}
-#channel_tool.LightSharing = "old"
-
-from Configurables import MCFTDistributionFibreTool
-fibre_tool = MCFTDistributionFibreTool()
-fibre_tool.CrossTalkProb = {CrossTalkProb} 
-
-from Configurables import MCFTPhotoelectronTool
-pe_tool = MCFTPhotoelectronTool()
-
-from Configurables import MCFTDepositCreator
-MCFTDepositCreator().SimulationType = "effective"
-MCFTDepositCreator().SpillNames = ["/"]
-MCFTDepositCreator().SpillTimes = [0.0]
-MCFTDepositCreator().SimulateNoise = False
-MCFTDepositCreator().addTool(att)
-MCFTDepositCreator().addTool(photon_tool)
-MCFTDepositCreator().addTool(channel_tool)
-MCFTDepositCreator().addTool(fibre_tool)
-MCFTDepositCreator().addTool(pe_tool)
-
-
-from Configurables import MCFTDigitCreator
-tof = 25.4175840541
-MCFTDigitCreator().IntegrationOffset = [26 - tof, 28 - tof, 30 - tof]
-
+setupBooleForDigitisation(params,cfg.digitype,cfg.pacific)
 
 s = SimConf()
 #SimConf().Detectors = ['VP', 'UT', 'FT', 'Rich1Pmt', 'Rich2Pmt', 'Ecal', 'Hcal', 'Muon']
@@ -149,7 +110,10 @@ files.extend(glob(cfg.files))
 IOHelper('ROOT').inputFiles(files)
 
 
+######################################
 # Configuration done, run time!
+######################################
+
 appMgr = GP.AppMgr()
 evt = appMgr.evtsvc()
 det = appMgr.detsvc()
@@ -159,7 +123,7 @@ hist.dump()
 
 resultPath = cfg.resultPath
 
-fileName = (files[0].split("/")[-1]).replace(".sim", "_{{0}}.root".format(cfg.nickname))
+fileName = (files[0].split("/")[-1]).replace(".sim", "_{0}.root".format(cfg.digitype))
 
 print("Outputfile: " + fileName)
 
@@ -171,7 +135,7 @@ outputTrees = []
 outputFile.cd()
 for layerNumber in layers:
   outputTrees.append(R.TTree("layer_" + str(layerNumber), "layer_" + str(layerNumber) ) )
-  sipmValPtr_thisLayer = {{}}
+  sipmValPtr_thisLayer = {}
   for sipmID in sipmIDs:
     arr = []
     for sipmChan in xrange(128):

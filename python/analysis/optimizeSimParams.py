@@ -17,7 +17,7 @@ if repo is None :
     print "Please setup the environment befire running!"
     sys.exit()
 
-from param_config import configure_params
+from param_config import configure_params, pickle_params
 import job_config as jc
 from job.utils.value import Value
 from job.utils.wheel import Wheel
@@ -35,7 +35,7 @@ class OptimizeParams :
     ntotpoints = 1
     launch_modes = ["local","interactive","batch"]
 
-    def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", forcenpts = False, digitype = "Detailed") :
+    def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", forcenpts = False, digitype = "detailed", pacific = False) :
         self.outdir = outdir
         self.niterations = niter
         self.mode = mode
@@ -43,6 +43,11 @@ class OptimizeParams :
         self.ngenfiles = len(glob(jc.simfiles+"/*.sim"))
         self.forcenpts = forcenpts
         self.digitype = digitype
+        self.pacific = pacific
+
+        pac = ""
+        if self.pacific : pac = " --pacific "
+        self.cmd = "python "+repo+"/job/run.py --digitype {dtype} --outdir {odir} {pacific}".format(odir=outdir,dtype=self.digitype,pacific=pac)
 
     def set_launch_mode(self,mode) :
         if mode in self.launch_modes :
@@ -84,7 +89,7 @@ class OptimizeParams :
         ranges = [ self.grid[vn] for vn in self.vorder ]
         self.grid["grid"] = get_combinations(ranges)
         
-    def launch(self,outdir,config_file = None):
+    def launch(self,outdir,params):
 
         host = os.getenv("HOSTNAME")
         is_lxplus = ( "lxplus" in host )
@@ -96,35 +101,38 @@ class OptimizeParams :
          
         ## Command for local serial running
         if self.launch_mode == "local" :
-            print "python "+repo+"/job/run.py --digiscript {cfile} --outdir {odir}".format(odir=outdir,cfile=config_file)
-            sb.call("python "+repo+"/job/run.py --digiscript {cfile} --outdir {odir}".format(odir=outdir,cfile=config_file),shell=True)
-            print "Done"
+            
+            runf = outdir + "/run.sh"
+            print self.cmd
+            print "chmod +x " + runf + " && " + runf
+            sb.call(self.cmd+" --params "+params)
             
         elif is_lxplus :
         
             ## Command for parallel running on lxplus in interactive mode
-            if self.launch_mode == "interactive" :
-                launch_interactive(outdir)
-            
+            ##if self.launch_mode == "interactive" :
+            ##    launch_interactive(outdir)
+            ##
             ## Command for prallel running on lxplus bach system
-            else :
-                batch_cmd = "bsub -R 'pool>30000' -o {dir}/out -e {dir}/err -q {queue} -J {jname} < {dir}/run.sh"
-                batch_cmd = batch_cmd.format(dir=outdir,queue="1nd",jname=outdir)
-                print batch_cmd
-                sb.call(batch_cmd,shell=True)
+            ##else :
+                
+            batch_cmd = "bsub -R 'pool>30000' -o {dir}/out -e {dir}/err -q {queue} -J {jname} < {dir}/run.sh"
+            batch_cmd = batch_cmd.format(dir=outdir,queue="1nd",jname=outdir)
+            print batch_cmd
+            sb.call(batch_cmd,shell=True)
 
         else :
             print "You are not on Lxplus, you can't run in batch mode"
 
     def send_jobs(self) :
 
-        if self.mode == "relaunch" and self.launch_mode != "local":
-            dirs = glob(self.outdir+"/*/*")
-            for d in dirs : 
-                if len(glob(d+"/comparisons/chi*.txt")) == self.ngenfiles : continue
-                print "Resubmiting:", d
-                self.launch(d)
-            return
+        #if self.mode == "relaunch" and self.launch_mode != "local":
+        #    dirs = glob(self.outdir+"/*/*")
+        #    for d in dirs : 
+        #        if len(glob(d+"/comparisons/chi*.txt")) == self.ngenfiles : continue
+        #        print "Resubmiting:", d
+        #        self.launch(d)
+        #    return
 
         for ip,p in enumerate(self.grid["grid"]) :
             outdir = self.outdir+"/"+str(self.curiter)+"/options"
@@ -135,7 +143,6 @@ class OptimizeParams :
                 vdict[vname] = d
             
             if not os.path.exists(outdir) : os.mkdir(outdir)
-            config_file = configure_params(vdict,outdir+"/",digifile="runDigitisation"+self.digitype+"_template.py")
             
             hasoutput = int(len(glob(outdir+"/comparisons/chi*.txt")) == self.ngenfiles)
             if hasoutput and self.mode != "force" : continue
@@ -143,12 +150,15 @@ class OptimizeParams :
             print "\n******************\n Running analysis for point ({0}/{1}): ".format(ip+1,self.ntotpoints)
             print vdict
 
-            frun = open(outdir + "/run.sh","w")
-            frun.write("source "+repo+"/job/setup.sh &> setuplog\n")
-            frun.write("python "+repo+"/job/run.py --digiscript {cfile} --outdir {odir}".format(odir=outdir,cfile=config_file))
-            frun.close()
+            param_file = pickle_params(vdict,outdir+"/")
 
-            self.launch(outdir,config_file)
+            frun = open(outdir + "/run.sh","w")
+            frun.write("source "+repo+"/setup.sh &> setuplog\n")
+            frun.write(self.cmd+" --params "+param_file)
+            frun.close()
+            sb.call("chmod +x " + outdir + "/run.sh",shell=True)
+
+            self.launch(outdir,params=param_file)
             
     def find_best(self) :
 
@@ -242,16 +252,16 @@ class OptimizeParams :
         print bestpoints
         self.make_plot()
 
-        odir = self.outdir+"/best"
-        if not os.path.exists(odir) : os.mkdir(odir)
-        config_file = configure_params(bestpoints,odir+"/")
-            
-        frun = open(odir + "/run.sh","w")
-        frun.write("source "+repo+"/job/setup.sh &> setuplog\n")
-        frun.write("python "+repo+"/job/run.py " + odir + "/ " + config_file + " --plot")
-        frun.close()
-
-        self.launch(odir,config_file)
+        #odir = self.outdir+"/best"
+        #if not os.path.exists(odir) : os.mkdir(odir)
+        #config_file = configure_params(bestpoints,odir+"/")
+        #    
+        #frun = open(odir + "/run.sh","w")
+        #frun.write("source "+repo+"/job/setup.sh &> setuplog\n")
+        #frun.write("python "+repo+"/job/run.py " + odir + "/ " + config_file + " --plot")
+        #frun.close()
+        #
+        #self.launch(odir,config_file)
 
     def make_plot(self) :
 
@@ -312,13 +322,14 @@ if __name__ == '__main__':
     parser.add_argument("-n","--niter", type=int, default=1)
     parser.add_argument("-f","--forcenpts", action='store_true')
     parser.add_argument("-l","--local", action='store_true')
-    parser.add_argument("-d","--digi", default="Detailed" )
+    parser.add_argument("-d","--digi", default="detailed" )
+    parser.add_argument("-p","--pacific",  action='store_true')
     parser.add_argument("variables",default = "[Var('CrossTalkProb',0.20,0.40,19)]")
     opts = parser.parse_args()
 
     variables = eval(opts.variables)
 
-    optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, digitype = opts.digi)
+    optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, digitype = opts.digi, pacific=opts.pacific)
     if opts.local : optimizer.set_launch_mode("local")
     else : optimizer.set_launch_mode("batch")
 

@@ -10,35 +10,44 @@ import os, sys, re
 import job_config as jc
 repo = os.getenv("SCIFITESTBEAMSIMROOT")
 
-test = False
 send = False
 mail = os.getenv('USER')+"@cern.ch"
 
 parser = ArgumentParser()
-parser.add_argument("--outdir","-o",default=None)
-parser.add_argument("--digiscript","-ds",default = jc.repo+'/python/digitisation/runDigitisationForTestbeam.py')
-parser.add_argument("--plot",action='store_true')
-parser.add_argument("--doprint",action='store_true')
-parser.add_argument("--nodigi",action='store_true')
-parser.add_argument("--gen",nargs=2,default=[])
-parser.add_argument("--steps",default="Digi,Cluster,Comp")
+parser.add_argument("--outdir","-o", default=None)
+parser.add_argument("--digitype",    default = 'improved')
+parser.add_argument("--pacific",     action='store_true')
+parser.add_argument("--plot",        action='store_true')
+parser.add_argument("--doprint",     action='store_true')
+parser.add_argument("--nodigi",      action='store_true')
+parser.add_argument("--gen",         nargs=2, default=[])
+parser.add_argument("--steps",       default="Digi,Cluster,Comp")
+parser.add_argument("--test",        action='store_true')
+parser.add_argument("--params",      type=str, default="")
 opts = parser.parse_args()
 
 outdir = opts.outdir
 if opts.outdir is None :
     print "Using default outputdir"
     outdir = jc.outdir
-digi_script = opts.digiscript
 
 #Scripts locations
+digi_script = jc.repo+'/python/digitisation/runDigitisationForTestBeam.py'
 sim_script = jc.repo+'/python/simulation/gauss-pgun-job-scifionly.py'
 cluster_script = jc.repo+"/build/bin/clusterAnalysis"
-compare_script = jc.repo+"/python/analysis/PlotCompare.py" 
+compare_script = jc.repo+"/python/analysis/PlotCompare.py"
 
 #Commands to launch
+
 sim_cmd     = 'mkdir -p {outdir} && cd {outdir} && '+jc.gauss+'/run gaudirun.py {script} &> {outdir}/simlog_{name}'
-digi_cmd    = 'mkdir -p {outdir} && cd {outdir} && '+jc.boole+'/run python {script} -f {f} -r {outdir} &> {outdir}/digilog_{name}'
+
+digi_cmd    = 'mkdir -p {outdir} && cd {outdir} && '+jc.boole+'/run python {script} -f {f} -r {outdir} --digitype {digitype} '
+if opts.pacific : digi_cmd += '--pacific '
+if opts.params != "" : digi_cmd += '--params {pms} '.format(pms=opts.params)
+#digi_cmd += '&> {outdir}/digilog_{name}'
+
 cluster_cmd = 'mkdir -p {outdir} && cd {outdir} && source SetupProject.sh DaVinci v41r3 &> {outdir}/setuplog && {script} -f {f} -s 1 -o {outdir} &> {outdir}/clusterlog_{name} '
+
 compare_cmd = 'mkdir -p {outdir} && cd {outdir} && source SetupProject.sh root &> {outdir}/setuplog && python {script} -d {outdir} '
 compare_cmd += '-testbt btTree -g4f {g4f} -g4t statTree ' 
 compare_cmd += '-testbf {tbf} -simf {simf}'
@@ -67,7 +76,7 @@ if len(opts.gen) > 0:
             sbtcmd += jc.gauss+"/run gaudirun.py gauss-pgun-job-scifionly.py' "
             curcmd = sbtcmd
              
-            if not test : sb.call(curcmd,shell=True)
+            if not opts.test : sb.call(curcmd,shell=True)
 
     files = glob(outdir+"/sim/*.sim")
 else :
@@ -87,9 +96,9 @@ for f in files :
 
     name = os.path.basename(f)
     name = os.path.splitext(name)[0]
-    curcmd = digi_cmd.format(script=digi_script,f=f,outdir=outdir+"/digitised/",name=name)
+    curcmd = digi_cmd.format(script=digi_script,f=f,outdir=outdir+"/digitised/",name=name,digitype=opts.digitype)
     if opts.doprint : print curcmd
-    if not test : sb.call(curcmd,shell=True)
+    if not opts.test : sb.call(curcmd,shell=True)
 
 ## Clusterising
 files = glob(outdir+"/digitised/testbeam*.root")
@@ -103,7 +112,7 @@ for f in files :
     name = os.path.splitext(name)[0]
     curcmd = cluster_cmd.format(script=cluster_script,f=f,outdir=outdir+"/clusters/",name=name)
     if opts.doprint : print curcmd
-    if not test : sb.call(curcmd,shell=True)  
+    if not opts.test : sb.call(curcmd,shell=True)  
 
 ## Compring plots
 files = glob(outdir+"/clusters/*.root")
@@ -129,10 +138,10 @@ for f in files :
     #curcmd = compare_cmd.format(script=compare_script,simf=f,outdir=outdir+"/comparisons/",tbf=testbeam_file)
 
     if opts.doprint : print curcmd
-    if not test : sb.call(curcmd,shell=True)
+    if not opts.test : sb.call(curcmd,shell=True)
 
 # Pack everything into a tar and send it to "mail"
-if not test and send :
+if not opts.test and send :
     sb.call("tar -czf ~/SciFi_comparisons.tar -C comparisons "+outdir+"/comparisons/*.png",shell=True)
     sb.call('echo "TestBeam comparisons" | mutt -s "TestBeam" -a ~/SciFi_comparisons.tar -- '+mail,shell=True)
 
