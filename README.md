@@ -1,6 +1,7 @@
 # SciFiTestbeamAndSimulation
 To compile the code, create a build directory and run cmake:
 ```
+lb-run Urania/v6r1 bash
 mkdir build
 cd build
 cmake ..

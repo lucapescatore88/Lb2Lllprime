@@ -13,5 +13,5 @@ build:
     - rm -fr build
     - mkdir -p build
     - cd build
-    - cmake $SCIFITESTBEAMSIMROOT -DCMAKE_C_COMPILER=/cvmfs/lhcb.cern.ch/lib/lcg/releases/LCG_84/gcc/4.9.3/x86_64-slc6/bin/gcc -DCMAKE_CXX_COMPILER=/cvmfs/lhcb.cern.ch/lib/lcg/releases/LCG_84/gcc/4.9.3/x86_64-slc6/bin/g++
-    - make
+    - lb-run Urania/v6r1 cmake $SCIFITESTBEAMSIMROOT -DCMAKE_C_COMPILER=/cvmfs/lhcb.cern.ch/lib/lcg/releases/LCG_84/gcc/4.9.3/x86_64-slc6/bin/gcc -DCMAKE_CXX_COMPILER=/cvmfs/lhcb.cern.ch/lib/lcg/releases/LCG_84/gcc/4.9.3/x86_64-slc6/bin/g++
+    - lb-run Urania/v6r1 make
