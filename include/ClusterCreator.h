@@ -11,31 +11,33 @@ typedef std::vector<Channel> Event;
 
 
 class ClusterCreator{
-private:
-  std::vector<Cluster*> clusters;
 
-public:
-  ClusterCreator(){};
-  ~ClusterCreator();
+    private:
+        std::vector<Cluster*> clusters;
 
-  std::vector<Cluster*>FindClustersInEventMax(
-    const Event& dataVector
-    ,const double neighbour_threshold
-    ,const double seed_threshold
-    ,const double sum_threshold
-    );
+    public:
+        ClusterCreator(){};
+        ~ClusterCreator();
 
-  std::vector<Cluster*>FindClustersInEventBoole(
-    const Event& event
-    ,const double neighbourThreshold
-    ,const double seedThreshold
-    ,const double sumThreshold
-    ,const int maxClusterSize
-    ,bool debug
-    );
+/*        std::vector<Cluster*>FindClustersInEventMax(
+                const Event& dataVector
+                ,const double neighbour_threshold
+                ,const double seed_threshold
+                ,const double sum_threshold
+                );
+*/
+        std::vector<Cluster*>FindClustersInEventBoole(
+                const Event& event
+                , const double neighbourThreshold
+                , const double seedThreshold
+                , const double sumThreshold
+                , const int maxClusterSize
+                , bool debug
+                , bool pacific
+                );
 
-  std::size_t getNumberOfClusters() const {return clusters.size();}
-  const std::vector<Cluster*> &getClusters() const {return clusters;}
+        std::size_t getNumberOfClusters() const { return clusters.size(); }
+        const std::vector<Cluster*> &getClusters() const { return clusters; }
 
 };
 

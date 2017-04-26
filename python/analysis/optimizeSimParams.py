@@ -47,7 +47,7 @@ class OptimizeParams :
 
         pac = ""
         if self.pacific : pac = " --pacific "
-        self.cmd = "python "+repo+"/job/run.py --digitype {dtype} --outdir {odir} {pacific}".format(odir=outdir,dtype=self.digitype,pacific=pac)
+        self.cmd = "python "+repo+"/job/run.py --digitype {dtype} {pacific}".format(dtype=self.digitype,pacific=pac)
 
     def set_launch_mode(self,mode) :
         if mode in self.launch_modes :
@@ -103,9 +103,9 @@ class OptimizeParams :
         if self.launch_mode == "local" :
             
             runf = outdir + "/run.sh"
-            print self.cmd
+            print self.cmd+" --params "+params+ " --outdir " + outdir
             print "chmod +x " + runf + " && " + runf
-            sb.call(self.cmd+" --params "+params)
+            sb.call(self.cmd+" --params "+params+ " --outdir " + outdir, shell=True)
             
         elif is_lxplus :
         
@@ -154,7 +154,7 @@ class OptimizeParams :
 
             frun = open(outdir + "/run.sh","w")
             frun.write("source "+repo+"/setup.sh &> setuplog\n")
-            frun.write(self.cmd+" --params "+param_file)
+            frun.write(self.cmd+" --params "+param_file + " --outdir " + outdir)
             frun.close()
             sb.call("chmod +x " + outdir + "/run.sh",shell=True)
 

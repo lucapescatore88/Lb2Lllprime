@@ -51,9 +51,10 @@ def setupBooleForDigitisation(params,digitype,pacific) :
     tof = 25.4175840541
     MCFTDigitCreator().IntegrationOffset = [26 - tof, 28 - tof, 30 - tof]
 
-    if pacific : 
-        print "Activating PACIFIC"
-        FTClusterCreator().StorePECharge = False
+    #if pacific : 
+    #    print "Activating PACIFIC"
+    #    FTClusterCreator().StorePECharge = False
+    #    FTClusterCreator().UsePENotADC = False
 
 
 def get_params(values = {}) :

@@ -134,50 +134,52 @@ sipmValPtr = []
 outputTrees = []
 outputFile.cd()
 for layerNumber in layers:
-  outputTrees.append(R.TTree("layer_" + str(layerNumber), "layer_" + str(layerNumber) ) )
-  sipmValPtr_thisLayer = {}
-  for sipmID in sipmIDs:
-    arr = []
-    for sipmChan in xrange(128):
-      arr.append(array.array("f", [0]))
-    sipmValPtr_thisLayer[sipmID] = arr
-    for adcChan in xrange(128):
-      outputTrees[-1].Branch("Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1), sipmValPtr_thisLayer[sipmID][adcChan] ,"Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1) + "/F")
-  sipmValPtr.append(sipmValPtr_thisLayer)
+    outputTrees.append(R.TTree("layer_" + str(layerNumber), "layer_" + str(layerNumber) ) )
+    sipmValPtr_thisLayer = {}
+    for sipmID in sipmIDs:
+        arr = []
+        for sipmChan in xrange(128):
+            arr.append(array.array("f", [0]))
+        sipmValPtr_thisLayer[sipmID] = arr
+        for adcChan in xrange(128):
+            outputTrees[-1].Branch("Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1), sipmValPtr_thisLayer[sipmID][adcChan] ,"Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1) + "/F")
+    sipmValPtr.append(sipmValPtr_thisLayer)
 
 nHits = 0
 while True:
-  appMgr.run(1)
+    appMgr.run(1)
 
-  if not evt['MC/Particles']:
-    print "no more particles"
-    break
+    if not evt['MC/Particles']:
+        print "no more particles"
+        break
 
-  nHits += len(evt["MC/FT/Hits"])
+    nHits += len(evt["MC/FT/Hits"])
   
-  digits = evt['/Event/MC/FT/Digits'].containedObjects()
-  for digit in digits:
+    digits = evt['/Event/MC/FT/Digits'].containedObjects()
+    for digit in digits:
     
-    jump = False
-    hits = digit.deposit().mcHitVec()
-    for h in hits :
-        mother = h.mcParticle().mother()
-        if "NULL" not in mother.__str__() : 
-            jump = True
-            break
+        jump = False
+        hits = digit.deposit().mcHitVec()
+        for h in hits :
+            mother = h.mcParticle().mother()
+            if "NULL" not in mother.__str__() : 
+                jump = True
+                break
         
-    if jump : continue 
-    channel = digit.channelID()
-    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 and channel.mat()==0:
-      sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.photoElectrons()
+        if jump : continue 
+        channel = digit.channelID()
+
+        adc = digit.photoElectrons()
+        if cfg.pacific : adc = digit.adcCount()
+
+        if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 and channel.mat()==0:
+            sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = adc
  
-  for t in outputTrees:
-    t.Fill()
-  resetSipmVals(sipmValPtr)
+    for t in outputTrees: t.Fill()
+    resetSipmVals(sipmValPtr)
 
 outputFile.cd()
-for t in outputTrees:
-  t.Write()
+for t in outputTrees: t.Write()
 outputFile.Close()
 
 

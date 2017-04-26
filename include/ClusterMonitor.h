@@ -11,16 +11,16 @@
 #include "ClusterCreator.h"
 
 
-class ClusterMonitor{
+class ClusterMonitor {
 
-private:
+    private:
 
-public:
-  ClusterMonitor(){};
-  ~ClusterMonitor(){};
-  typedef std::map<std::string, std::vector<double> > feature_map;
+    public:
+        ClusterMonitor(){};
+        ~ClusterMonitor(){};
+        typedef std::map<std::string, std::vector<double> > feature_map;
 
-  void WriteToNtuple(const ClusterCreator& clCreator, const std::string fileName, const feature_map features = feature_map());
+        void WriteToNtuple(const ClusterCreator& clCreator, const std::string fileName, const feature_map features = feature_map(), bool pacific = false);
 
 
 };

@@ -46,7 +46,9 @@ if opts.pacific : digi_cmd += '--pacific '
 if opts.params != "" : digi_cmd += '--params {pms} '.format(pms=opts.params)
 #digi_cmd += '&> {outdir}/digilog_{name}'
 
-cluster_cmd = 'mkdir -p {outdir} && cd {outdir} && source SetupProject.sh DaVinci v41r3 &> {outdir}/setuplog && {script} -f {f} -s 1 -o {outdir} &> {outdir}/clusterlog_{name} '
+cluster_cmd = 'mkdir -p {outdir} && cd {outdir} && lb-run Urania/v6r1 {script} -f {f} -s 1 -o {outdir} '
+if opts.pacific : cluster_cmd += ' --pacific  '
+cluster_cmd += ' &> {outdir}/clusterlog_{name} '
 
 compare_cmd = 'mkdir -p {outdir} && cd {outdir} && source SetupProject.sh root &> {outdir}/setuplog && python {script} -d {outdir} '
 compare_cmd += '-testbt btTree -g4f {g4f} -g4t statTree ' 

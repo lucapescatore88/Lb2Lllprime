@@ -41,6 +41,7 @@ struct config{
     std::vector<std::string> files2analyse;
     std::string outputpath;
     bool debug;
+    bool pacific;
     bool simulation;
     std::string clusterAlg;
     std::string tag;
@@ -85,13 +86,13 @@ int parseOptions(config &c, int argc, char *argv[]){
     // declare options
     po::options_description desc("Allowed options") ;
     desc.add_options()
-        ("help", "show this help")
-        ("file,f", po::value<std::vector<std::string>>(&c.files2analyse)->multitoken(), "corrected test beam data file")
-        ("outputpath,o", po::value<std::string>(&c.outputpath)->default_value(""), "output path for clusterized samples")
+        ("help", "Show this help")
+        ("file,f", po::value<std::vector<std::string>>(&c.files2analyse)->multitoken(), "Corrected test beam data file")
+        ("outputpath,o", po::value<std::string>(&c.outputpath)->default_value(""), "Output path for clusterized samples")
         ("simulation,s", po::bool_switch(&c.simulation), "Simulated input?")
-        // ("clusteralg,c", po::value<std::string>(&c.clusterAlg)->default_value("b"), "clustering algorithm: b for Boole or m for Maxs")
-        ("tag,t", po::value<std::string>(&c.tag)->default_value(""), "tag that is added to the output file name")
-        ("debug,d", po::bool_switch(&c.debug), "debug output")
+        ("tag,t", po::value<std::string>(&c.tag)->default_value(""), "Tag that is added to the output file name")
+        ("debug,d", po::bool_switch(&c.debug), "Debug output")
+        ("pacific,p", po::bool_switch(&c.pacific), "Use PACIFIC digitisation")
         ;
 
     // actually do the parsing
@@ -147,7 +148,8 @@ std::string getPositionFromFileName(std::string fileName){
         position = runNumbersAndPositions.find(currentRunNumber) != runNumbersAndPositions.end() ? runNumbersAndPositions[currentRunNumber] : "";
 
     }
-    else{ //simulation
+    else //simulation
+    {
         std::string lookFor = "testbeam_simulation_position_";
         auto posStartAt = fileName.find(lookFor) + lookFor.size();
         auto posEndAt = fileName.find("_", posStartAt);
@@ -252,34 +254,32 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
     {
         for (const auto& event : *data["simulation"])
         {
-            clCreators["simulation"].FindClustersInEventBoole(*event, 1.5, 2.5, 4.0, 100, false);
-            // if(c.clusterAlg == "m") clCreators["simulation"].FindClustersInEventMax(*event, 1.5, 2.5, 4.0);
+            clCreators["simulation"].FindClustersInEventBoole(*event, 1.5, 2.5, 4.0, 100, false, (bool)c.pacific);
             if (currentNumberOfClusters == clCreators["simulation"].getNumberOfClusters()) ++missedEvents;
             currentNumberOfClusters = clCreators["simulation"].getNumberOfClusters();
-            //neighbor, seed, sum, maxsize, debug in simu 3, 5, 8
         }
     }
     else
     {
         for(unsigned int i = 0; i<inputTree->GetEntriesFast(); ++i)
         {
-            clustersInModule["cern"] = clCreators["cern"].FindClustersInEventBoole(*(data["cern"]->at(i)), 1.5, 2.5, 4.0, 100, false);
-            clustersInModule["slayer"] = clCreators["slayer"].FindClustersInEventBoole(*(data["slayer"]->at(i)), 1.5, 2.5, 4.0, 100, false);
-            clustersInModule["HD2"] = clCreators["HD2"].FindClustersInEventBoole(*(data["HD2"]->at(i)), 1.5, 2.5, 4.0, 100, false);
+            clustersInModule["cern"] = clCreators["cern"].FindClustersInEventBoole(*(data["cern"]->at(i)), 1.5, 2.5, 4.0, 100, false, (bool)c.pacific);
+            clustersInModule["slayer"] = clCreators["slayer"].FindClustersInEventBoole(*(data["slayer"]->at(i)), 1.5, 2.5, 4.0, 100, false, (bool)c.pacific);
+            clustersInModule["HD2"] = clCreators["HD2"].FindClustersInEventBoole(*(data["HD2"]->at(i)), 1.5, 2.5, 4.0, 100, false, (bool)c.pacific);
 
             if(  clustersInModule["cern"].size() == 1
                     && clustersInModule["slayer"].size() == 1
                     && clustersInModule["HD2"].size() == 1 )
             {
 
-                clustersInModule["slayer"] = clCreators["simulation"].FindClustersInEventBoole(*(data["slayer"]->at(i)), 1.5, 2.5, 4.0, 100, false);
+                clustersInModule["slayer"] = clCreators["simulation"].FindClustersInEventBoole(*(data["slayer"]->at(i)), 1.5, 2.5, 4.0, 100, false, (bool)c.pacific);
 
 
-                xPositions = {
+                xPositions = 
+                {
                     clustersInModule["HD2"][0]->GetChargeWeightedMean() * 250.,
                     clustersInModule["slayer"][0]->GetChargeWeightedMean() * 250.,
                     clustersInModule["cern"][0]->GetChargeWeightedMean() * 250.
-
                 };
 
                 double dx = xPositions[2] - xPositions[0];
@@ -288,16 +288,10 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
                 double slope =  dx / dz;
                 double constant = xPositions[0];
 
-                //std::cout << "Track is " << constant << " + " << slope << " * x\n";
-
                 double trackAtSlayer = constant + slope * zPositions[1];
-                //std::cout << "Track at slayer should be " << trackAtSlayer << " and is " << xPositions[1] << "\n";
                 if(produceOffsetFile) xOffsets.push_back(trackAtSlayer - xPositions[1]);
-                else{
-                    track_distances.push_back(trackAtSlayer - xPositions[1] - xOffsets[0]);
-                }
-
-
+                else track_distances.push_back(trackAtSlayer - xPositions[1] - xOffsets[0]);
+                
             }
 
             if(!clustersInModule["cern"].empty() && !clustersInModule["HD2"].empty()) ++missedEvents;
@@ -348,7 +342,6 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
         gauss.plotOn(plot);
         plot->Draw();
 
-        //      can_offset.SaveAs("/home/ttekampe/SciFi/results/moduleOffset/" + removePath(file2analyse).ReplaceAll(".root", ".pdf") );
         can_offset.SaveAs(c.outputpath + removePath(file2analyse).ReplaceAll(".root", ".pdf") );
 
         fr->Print("v");
@@ -359,8 +352,10 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
 
         // restart and run with offsets
         std::map<std::string, std::vector<std::vector<Channel>*>* > data;
-        for (auto& module : data){
-            for(unsigned int entryIndex = 0; entryIndex < module.second->size(); ++entryIndex){
+        for (auto& module : data)
+        {
+            for(unsigned int entryIndex = 0; entryIndex < module.second->size(); ++entryIndex)
+            {
                 delete module.second->at(entryIndex);
             }
         }
@@ -373,7 +368,8 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
     double meanLightYield{0};
     for(const auto& cl : clCreators["simulation"].getClusters())
     {
-        meanLightYield += cl->GetSumOfAdcValues();
+        if (c.pacific) meanLightYield += cl->GetSumOfAdcValuesPacific(1.5,2.5,4.0);
+        else meanLightYield += cl->GetSumOfAdcValues();
     }
     meanLightYield /= (double)clCreators["simulation"].getNumberOfClusters();
     std::cout << "Number of clusters officially: "<< (double)clCreators["simulation"].getNumberOfClusters() << "\n";
@@ -381,7 +377,11 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
     double stdDevLightYield{0};
     for(const auto& cl : clCreators["simulation"].getClusters())
     {
-        stdDevLightYield += (cl->GetSumOfAdcValues() - meanLightYield) * (cl->GetSumOfAdcValues() - meanLightYield);
+        double cur = 0.;
+        if (c.pacific)  cur = cl->GetSumOfAdcValuesPacific(1.5,2.5,4.0);
+        else cur = cl->GetSumOfAdcValues();
+
+        stdDevLightYield += (cur - meanLightYield) * (cur - meanLightYield);
     }
 
     stdDevLightYield *= 1./((double)clCreators["simulation"].getNumberOfClusters() - 1.);
@@ -422,9 +422,11 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
     ClusterMonitor clMonitor;
     clMonitor.WriteToNtuple(clCreators["simulation"], 
             (c.outputpath + removePath(file2analyse).ReplaceAll(".root", "_clusterAnalyis" + c.tag +".root")).Data(),
-            features );
-    for (auto& module : data){
-        for(unsigned int entryIndex = 0; entryIndex < module.second->size(); ++entryIndex){
+            features, c.pacific);
+    for (auto& module : data)
+    {
+        for(unsigned int entryIndex = 0; entryIndex < module.second->size(); ++entryIndex)
+        {
             delete module.second->at(entryIndex);
         }
     }
