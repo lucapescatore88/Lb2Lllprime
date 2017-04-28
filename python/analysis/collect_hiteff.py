@@ -15,6 +15,7 @@ c = TCanvas()
 ## make simulation plot
 
 def collectSim(base) :
+
     simgr = TGraph()
     effs = []
     lgts = []
@@ -33,13 +34,12 @@ def collectSim(base) :
         eff_errs.append(float(eff.groups()[1]))
         lgt_errs.append(float(light.groups()[1]))
     
-    print zip(effs,lgts)
-    simg = TGraphErrors(len(effs),np.array(lgts),np.array(effs),np.array(lgt_errs),np.array(eff_errs))
-    return simg
+    #print zip(effs,lgts)
+    return TGraphErrors(len(effs),np.array(lgts),np.array(effs),np.array(lgt_errs),np.array(eff_errs))
 
 detailed  = collectSim(simbase)
-improved  = collectSim(simbase_tmp.format("Improved"))
-effective = collectSim(simbase_tmp.format("Effective"))
+#improved  = collectSim(simbase_tmp.format("Improved"))
+#effective = collectSim(simbase_tmp.format("Effective"))
 
 ## Make testbeam plot
 tbfile = TFile(tbfile)
@@ -64,21 +64,22 @@ detailed.GetXaxis().SetRangeUser(8,24)
 
 detailed.GetYaxis().SetTitle("Hit efficiency")
 detailed.GetXaxis().SetTitle("Light yield")
-improved.SetMarkerColor(2)
-improved.SetMarkerSize(0.8)
-improved.Draw("Psame")
-effective.SetMarkerColor(3)
-effective.SetMarkerSize(0.8)
-effective.Draw("Psame")
+#improved.SetMarkerColor(2)
+#improved.SetMarkerSize(0.8)
+#improved.Draw("Psame")
+#effective.SetMarkerColor(3)
+#effective.SetMarkerSize(0.8)
+#effective.Draw("Psame")
 
 tbh.Draw("Psame")
 tbh.SetMarkerSize(0.8)
 
-leg = TLegend(0.7,0.2,0.9,0.4)
-leg.AddEntry(detailed,"Sim. Detailed","P")
-leg.AddEntry(improved,"Sim. Improved","P")
-leg.AddEntry(effective,"Sim. Effective","P")
-leg.AddEntry(tbh,"Testbeam","P")
+leg = TLegend(0.55,0.2,0.9,0.4)
+leg.AddEntry(detailed,"Simulation","P")
+#leg.AddEntry(detailed,"Sim. Detailed","P")
+#leg.AddEntry(improved,"Sim. Improved","P")
+#leg.AddEntry(effective,"Sim. Effective","P")
+leg.AddEntry(tbh,"Test beam data","P")
 leg.Draw()
 
 c.Print("hitEff_vs_lightYield.pdf")
