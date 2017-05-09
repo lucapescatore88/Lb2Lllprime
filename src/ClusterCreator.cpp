@@ -12,18 +12,19 @@ ClusterCreator::~ClusterCreator()
     }
 }
 
-
 std::vector<Cluster*> ClusterCreator::FindClustersInEventBoole(const Event& event,
-        std::vector<float> thresholds,
-        int maxClusterSize,
+        std::vector<float> thresholds, int maxClusterSize,
         bool debug, bool pacific)
 {
-    double seedThreshold = thresholds[0];
-    double neighbourThreshold = thresholds[1];
-    double sumThreshold = thresholds[2];
-    //std::cout << "Seed " << seedThreshold << std::endl;
-    //std::cout << "Neighbor " << neighbourThreshold << std::endl;
-    //std::cout << "Sum " << sumThreshold << std::endl;
+    return FindClustersInEventBoole(event, 
+            thresholds[0], thresholds[1], thresholds[2], 
+            maxClusterSize, debug, pacific);
+}
+
+std::vector<Cluster*> ClusterCreator::FindClustersInEventBoole(const Event& event,
+        double neighbourThreshold, double seedThreshold, double sumThreshold,
+        int maxClusterSize, bool debug, bool pacific)
+{
     if(pacific)
     {
         neighbourThreshold = 1;

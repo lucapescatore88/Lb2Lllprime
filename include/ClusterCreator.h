@@ -9,7 +9,6 @@
 
 typedef std::vector<Channel> Event;
 
-
 class ClusterCreator{
 
     private:
@@ -19,20 +18,13 @@ class ClusterCreator{
         ClusterCreator(){};
         ~ClusterCreator();
 
-/*        std::vector<Cluster*>FindClustersInEventMax(
-                const Event& dataVector
-                ,const double neighbour_threshold
-                ,const double seed_threshold
-                ,const double sum_threshold
-                );
-*/
+        std::vector<Cluster*> FindClustersInEventBoole(const Event& event,
+            double neighbourThreshold, double seedThreshold, double sumThreshold,
+            int maxClusterSize, bool debug, bool pacific);
+
         std::vector<Cluster*>FindClustersInEventBoole(
-                const Event& event
-                , std::vector<float> thresholds
-                , const int maxClusterSize
-                , bool debug
-                , bool pacific
-                );
+                const Event& event, std::vector<float> thresholds, 
+                int maxClusterSize, bool debug, bool pacific);
 
         std::size_t getNumberOfClusters() const { return clusters.size(); }
         const std::vector<Cluster*> &getClusters() const { return clusters; }

@@ -369,7 +369,7 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
     double meanLightYield{0};
     for(const auto& cl : clCreators["simulation"].getClusters())
     {
-        if (c.pacific) meanLightYield += cl->GetSumOfAdcValuesPacific(cfg.thrs);
+        if (c.pacific) meanLightYield += cl->GetSumOfAdcValuesPacific(c.thrs);
         else meanLightYield += cl->GetSumOfAdcValues();
     }
     meanLightYield /= (double)clCreators["simulation"].getNumberOfClusters();
@@ -379,7 +379,7 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
     for(const auto& cl : clCreators["simulation"].getClusters())
     {
         double cur = 0.;
-        if (c.pacific)  cur = cl->GetSumOfAdcValuesPacific(cfg.thrs);
+        if (c.pacific)  cur = cl->GetSumOfAdcValuesPacific(c.thrs);
         else cur = cl->GetSumOfAdcValues();
 
         stdDevLightYield += (cur - meanLightYield) * (cur - meanLightYield);

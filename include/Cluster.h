@@ -25,6 +25,8 @@ class Cluster{
         double GetSumOfAdcValues() const;
         double GetChargeWeightedMeanPacific(double neighborW, double seedW, double sumW) const;
         double GetSumOfAdcValuesPacific(double neighborW, double seedW, double sumW) const;
+        double GetChargeWeightedMeanPacific(std::vector<float>thresholds) const;
+        double GetSumOfAdcValuesPacific(std::vector<float>thresholds) const;
         double GetMaximumAdcValue() const;
         unsigned int GetClusterSize() const {return RelatedChannels.size();}
         unsigned int GetMinChannel() const;

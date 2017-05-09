@@ -49,6 +49,11 @@ double Cluster::GetChargeWeightedMean() const
     return mean/totalCharge;
 }
 
+double Cluster::GetChargeWeightedMeanPacific(std::vector<float>thresholds) const
+{
+    return GetChargeWeightedMeanPacific(thresholds[0], thresholds[1], thresholds[2]);
+}
+
 double Cluster::GetChargeWeightedMeanPacific(double neighborW, double seedW, double sumW) const
 {
     double totalCharge{0.};
@@ -87,6 +92,11 @@ double Cluster::GetSumOfAdcValues() const
     return sumOfAdcValues;
 }
 
+double Cluster::GetSumOfAdcValuesPacific(std::vector<float>thresholds) const
+{
+    return GetSumOfAdcValuesPacific(thresholds[0], thresholds[1], thresholds[2]);
+}
+
 double Cluster::GetSumOfAdcValuesPacific(double neighborW, double seedW, double sumW) const
 {
     double sumOfAdcValues{0.};
@@ -123,6 +133,7 @@ unsigned int Cluster::GetMinChannel() const
     }
     return minChannel;
 }
+
 unsigned int Cluster::GetMaxChannel() const
 {
     unsigned int maxChannel{0};
