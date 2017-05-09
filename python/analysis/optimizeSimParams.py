@@ -327,7 +327,7 @@ if __name__ == '__main__':
     parser.add_argument("-f","--forcenpts", action='store_true')
     parser.add_argument("-l","--local", action='store_true')
     parser.add_argument("-d","--digi", default="detailed" )
-    parser.add_argument("-t","--thresholds", default="[1.5,2.5,4.5]")
+    parser.add_argument("-t","--thresholds", default="'[1.5,2.5,4.5]'")
     parser.add_argument("-p","--pacific",  action='store_true')
     parser.add_argument("variables",default = "[Var('CrossTalkProb',0.20,0.40,19)]")
     opts = parser.parse_args()
