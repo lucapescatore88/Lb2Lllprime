@@ -16,7 +16,7 @@ mail = os.getenv('USER')+"@cern.ch"
 parser = ArgumentParser()
 parser.add_argument("--outdir","-o", default=None)
 parser.add_argument("--digitype",    default = 'improved')
-parser.add_argument("-t","--thresholds", default="[1.5,2.5,3.5]")
+parser.add_argument("-t","--thresholds", default="'[1.5,2.5,3.5]'")
 parser.add_argument("--pacific",     action='store_true')
 parser.add_argument("--plot",        action='store_true')
 parser.add_argument("--doprint",     action='store_true')
@@ -45,10 +45,11 @@ sim_cmd     = 'mkdir -p {outdir} && cd {outdir} && '+jc.gauss+'/run gaudirun.py 
 digi_cmd    = 'mkdir -p {outdir} && cd {outdir} && '+jc.boole+'/run python {script} -f {f} -r {outdir} --digitype {digitype} '
 if opts.pacific : digi_cmd += '--pacific '
 digi_cmd += "  --thresholds " + opts.thresholds
-if opts.params != "" : digi_cmd += '--params {pms} '.format(pms=opts.params)
+if opts.params != "" : digi_cmd += ' --params {pms} '.format(pms=opts.params)
 digi_cmd += '&> {outdir}/digilog_{name}'
 
-cluster_cmd = 'mkdir -p {outdir} && cd {outdir} && lb-run Urania/v6r1 {script} -f {f} -s 1 -o {outdir} --thresholds ' + ' '.join(eval(opts.thresholds))
+cluster_cmd =  'mkdir -p {outdir} && cd {outdir} && lb-run Urania/v6r1 {script} -f {f} -s 1 -o {outdir} --thresholds '
+cluster_cmd += ' '.join([ str(x) for x in eval(opts.thresholds)])
 if opts.pacific : cluster_cmd += ' --pacific  '
 cluster_cmd += ' &> {outdir}/clusterlog_{name} '
 

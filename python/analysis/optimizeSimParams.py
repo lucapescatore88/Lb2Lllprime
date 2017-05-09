@@ -36,7 +36,7 @@ class OptimizeParams :
     launch_modes = ["local","interactive","batch"]
 
     def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", 
-            forcenpts = False, digitype = "detailed", pacific = False, thresholds = "[1.5,2.5,4.5]") :
+            forcenpts = False, digitype = "detailed", pacific = False, thresholds = "'[1.5,2.5,4.5]'") :
 
         self.outdir = outdir
         self.niterations = niter
@@ -47,10 +47,9 @@ class OptimizeParams :
         self.digitype = digitype
         self.pacific = pacific
         self.thresholds = thresholds
-
         pac = ""
         if self.pacific : pac = " --pacific "
-        self.cmd = "python "+repo+"/job/run.py --digitype {dtype} {pacific} --thresholds".format(
+        self.cmd = "python "+repo+"/job/run.py --digitype {dtype} {pacific} --thresholds {thresholds}".format(
                 dtype=self.digitype,pacific=pac,thresholds=self.thresholds)
 
     def set_launch_mode(self,mode) :
