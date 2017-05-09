@@ -35,7 +35,9 @@ class OptimizeParams :
     ntotpoints = 1
     launch_modes = ["local","interactive","batch"]
 
-    def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", forcenpts = False, digitype = "detailed", pacific = False) :
+    def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", 
+            forcenpts = False, digitype = "detailed", pacific = False, thresholds = "[1.5,2.5,4.5]") :
+
         self.outdir = outdir
         self.niterations = niter
         self.mode = mode
@@ -44,10 +46,12 @@ class OptimizeParams :
         self.forcenpts = forcenpts
         self.digitype = digitype
         self.pacific = pacific
+        self.thresholds = thresholds
 
         pac = ""
         if self.pacific : pac = " --pacific "
-        self.cmd = "python "+repo+"/job/run.py --digitype {dtype} {pacific}".format(dtype=self.digitype,pacific=pac)
+        self.cmd = "python "+repo+"/job/run.py --digitype {dtype} {pacific} --thresholds".format(
+                dtype=self.digitype,pacific=pac,thresholds=self.thresholds)
 
     def set_launch_mode(self,mode) :
         if mode in self.launch_modes :
@@ -323,13 +327,15 @@ if __name__ == '__main__':
     parser.add_argument("-f","--forcenpts", action='store_true')
     parser.add_argument("-l","--local", action='store_true')
     parser.add_argument("-d","--digi", default="detailed" )
+    parser.add_argument("-t","--thresholds", default="[1.5,2.5,4.5]")
     parser.add_argument("-p","--pacific",  action='store_true')
     parser.add_argument("variables",default = "[Var('CrossTalkProb',0.20,0.40,19)]")
     opts = parser.parse_args()
 
     variables = eval(opts.variables)
 
-    optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, digitype = opts.digi, pacific=opts.pacific)
+    optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, 
+            digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds)
     if opts.local : optimizer.set_launch_mode("local")
     else : optimizer.set_launch_mode("batch")
 

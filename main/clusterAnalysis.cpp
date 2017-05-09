@@ -39,6 +39,7 @@ namespace po = boost::program_options;
 
 struct config{
     std::vector<std::string> files2analyse;
+    std::vector<float> thrs;
     std::string outputpath;
     bool debug;
     bool pacific;
@@ -92,6 +93,7 @@ int parseOptions(config &c, int argc, char *argv[]){
         ("simulation,s", po::bool_switch(&c.simulation), "Simulated input?")
         ("tag,t", po::value<std::string>(&c.tag)->default_value(""), "Tag that is added to the output file name")
         ("debug,d", po::bool_switch(&c.debug), "Debug output")
+        ("thresholds,T", po::value<std::vector<float>>(&c.thrs)->multitoken(), "Thresholds")
         ("pacific,p", po::bool_switch(&c.pacific), "Use PACIFIC digitisation")
         ;
 
@@ -254,7 +256,7 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
     {
         for (const auto& event : *data["simulation"])
         {
-            clCreators["simulation"].FindClustersInEventBoole(*event, 1.5, 2.5, 4.0, 100, false, (bool)c.pacific);
+            clCreators["simulation"].FindClustersInEventBoole(*event, c.thrs, 100, false, (bool)c.pacific);
             if (currentNumberOfClusters == clCreators["simulation"].getNumberOfClusters()) ++missedEvents;
             currentNumberOfClusters = clCreators["simulation"].getNumberOfClusters();
         }
@@ -263,16 +265,16 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
     {
         for(unsigned int i = 0; i<inputTree->GetEntriesFast(); ++i)
         {
-            clustersInModule["cern"] = clCreators["cern"].FindClustersInEventBoole(*(data["cern"]->at(i)), 1.5, 2.5, 4.0, 100, false, (bool)c.pacific);
-            clustersInModule["slayer"] = clCreators["slayer"].FindClustersInEventBoole(*(data["slayer"]->at(i)), 1.5, 2.5, 4.0, 100, false, (bool)c.pacific);
-            clustersInModule["HD2"] = clCreators["HD2"].FindClustersInEventBoole(*(data["HD2"]->at(i)), 1.5, 2.5, 4.0, 100, false, (bool)c.pacific);
+            clustersInModule["cern"] = clCreators["cern"].FindClustersInEventBoole(*(data["cern"]->at(i)), c.thrs, 100, false, (bool)c.pacific);
+            clustersInModule["slayer"] = clCreators["slayer"].FindClustersInEventBoole(*(data["slayer"]->at(i)), c.thrs, 100, false, (bool)c.pacific);
+            clustersInModule["HD2"] = clCreators["HD2"].FindClustersInEventBoole(*(data["HD2"]->at(i)), c.thrs, 100, false, (bool)c.pacific);
 
             if(  clustersInModule["cern"].size() == 1
                     && clustersInModule["slayer"].size() == 1
                     && clustersInModule["HD2"].size() == 1 )
             {
 
-                clustersInModule["slayer"] = clCreators["simulation"].FindClustersInEventBoole(*(data["slayer"]->at(i)), 1.5, 2.5, 4.0, 100, false, (bool)c.pacific);
+                clustersInModule["slayer"] = clCreators["simulation"].FindClustersInEventBoole(*(data["slayer"]->at(i)), c.thrs, 100, false, (bool)c.pacific);
 
 
                 xPositions = 

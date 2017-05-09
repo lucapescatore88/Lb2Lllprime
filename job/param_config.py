@@ -32,6 +32,7 @@ def get_params(values = {}) :
 
     if "PhotonWidth" not in values :
         values["PhotonWidth"] = 0.33
+        #values["PhotonWidth"] = 0.45
     if "ShortAttLgh" not in values :
         values["ShortAttLgh"] = 455.6
     if "LongAttLgh" not in values :
@@ -42,5 +43,6 @@ def get_params(values = {}) :
         values["CrossTalkProb"] = 0.22 
     if "PhotonsPerMeV" not in values :
         values["PhotonsPerMeV"] = 126.
+        #values["PhotonsPerMeV"] = 119.
 
     return values

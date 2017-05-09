@@ -8,11 +8,11 @@ from Configurables import MCFTDepositCreator
 from Configurables import MCFTDigitCreator
 from Configurables import FTClusterCreator
 
-def setupBooleForDigitisation(params,digitype,pacific) :
+def setupBooleForDigitisation(params,digitype,thresholds) :
 
     print "Setting Boole:"
     print "Parameters -> ", params
-    print "PACIFIC digits -> ", pacific
+    print "Thresholds -> ", thresholds
     print "Simulation type -> ", digitype
 
     SiPMResponse().ElectronicsResponse = "flat"#Use flat SiPM time response 
@@ -50,12 +50,10 @@ def setupBooleForDigitisation(params,digitype,pacific) :
     
     tof = 25.4175840541
     MCFTDigitCreator().IntegrationOffset = [26 - tof, 28 - tof, 30 - tof]
-
-    #if pacific : 
-    #    print "Activating PACIFIC"
-    #    FTClusterCreator().StorePECharge = False
-    #    FTClusterCreator().UsePENotADC = False
-
+    MCFTDigitCreator().ADCThreshold1 = thresholds[0]
+    MCFTDigitCreator().ADCThreshold2 = thresholds[1]
+    MCFTDigitCreator().ADCThreshold3 = thresholds[2]
+    
 
 def get_params(values = {}) :
 

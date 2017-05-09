@@ -1,13 +1,14 @@
 #!/usr/bin/python
-#Author : PESCATORE Luca, BELLEE Violaine
-#Date : 2017/03/07                                                                                                                                           
+# Author : PESCATORE Luca, BELLEE Violaine
+# Date : 2017/03/07                                                                                                                                           
 #Used to compare cluster observables between the geant 4 'stand-alone' simulation and boole simulation
 
 import argparse
 from ROOT import *
-import math
+import math, os
 
-gROOT.ProcessLine('.x $SCIFITESTBEAMSIMROOT/job/lhcbStyle.C')
+repo = os.getenv("SCIFITESTBEAMSIMROOT")
+gROOT.ProcessLine('.x '+repo+'/job/lhcbStyle.C')
 
 colors = [1,4,2,3,7,6,8,9]
 
@@ -19,6 +20,8 @@ def findMax(tree,variable) :
     return h.GetXaxis().GetBinCenter(binmax)
 
 def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_observable, title, beginning, end, numbins, noplot):
+
+    ## Create teplate histograms
 
     histos = {}
     boolehisto = None
@@ -38,7 +41,8 @@ def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_obse
             boolehisto = h
             print "Simulaiton histogram for comparisons is", name.replace(observable,"")
 
-    leg = TLegend(0.6,0.7,0.95,0.89)
+    ## Fill histrograms
+    leg = TLegend(0.6,0.7,0.93,0.89)
     for i,t in enumerate(trees) :
         name = t[0].replace(" ","")+observable
         if "Geant" in t[0] : t[1].Draw(geant_observable+'>>'+name)
@@ -46,8 +50,9 @@ def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_obse
             #curmax = findMax(t[1],"distance_from_track")
             t[1].Draw(geant_observable+'>>'+name)#,"abs(distance_from_track - {curmax}) < 100".format(curmax=curmax))
         else : t[1].Draw(observable+'>>'+name)
-        leg.AddEntry(histos[name.replace(observable,"")],t[0],"l")
+        leg.AddEntry(histos[name.replace(observable,"")],t[0].replace('Beam','beam'),"l")
 
+    ## Calculate chi2 TB/Boole and G4/Boole   
     chi2ndf = -1
     chi2ndf_testbeam = -1
 
@@ -57,6 +62,8 @@ def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_obse
         chi2ndf = histos["Geant4simulation"].Chi2Test(boolehisto,"CHI2/NDF")
 
     if noplot : return chi2ndf, chi2ndf_testbeam, numbins, observable
+
+    ## Plot
 
     hs = THStack ("hs",'')
     for hn,h in histos.iteritems() :
@@ -70,14 +77,7 @@ def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_obse
 
     hs.Draw("nostack")
     hs.GetXaxis().SetTitle(title)
-    hs.GetXaxis().SetTitleSize(0.045)
-
-    bin = (end-beginning)/numbins
-    binstr = "%.2f" % bin
-
     hs.GetYaxis().SetTitle('A.U.')
-    hs.GetYaxis().SetTitleOffset(1.1)
-    hs.GetYaxis().SetTitleSize(0.045)
 
     leg.Draw("same")
     canvas.Print(outputdirectory+outputname+'_'+observable+'.png')
@@ -113,7 +113,7 @@ if __name__ == '__main__':
                                 'sumCharge'         : ('Total cluster charge', 0, 80, 80, 'clusterCharge') }
 
 
-    ### Define files to be read and beginning and end of the histograms
+    ### Define files to be read and the range of the histograms
 
     outputname = "comparison"
     outputdirectory = args.outputdirectory
@@ -123,40 +123,36 @@ if __name__ == '__main__':
     if args.testbf is not None :
         trees.append( ( "Test Beam data", TChain(args.testbt)) )
         trees[-1][1].AddFile(args.testbf)
-        print args.testbf
-
+        
     if args.simf is not None :
         trees.append( ("Boole simulation", TChain(args.simt)) )
+        #trees.append( ("Simulation", TChain(args.simt)) )
         trees[-1][1].AddFile(args.simf)
         outputname = (args.simf.split("/")[-1]).replace(".root", "_{0}".format(args.nickname))
-        print args.simf
     elif args.simconfig is not None:
         simfiles =  eval(open(args.simconfig).read())
         for lab,f in simfiles.iteritems() :
             trees.append( (lab, TChain(args.simt)) )
             trees[-1][1].AddFile(f)
             outputname = (f.split("/")[-1]).replace(".root", "_{0}".format(args.nickname))
-            print f
 
     if args.g4f is not None :
         trees.append( ("Geant4 simulation", TChain(args.g4t)) )
         trees[-1][1].AddFile(args.g4f)
 
-    chi2s = []
-    for feature, properties in features_and_properties.iteritems():
-        observable = feature
-        title = properties[0]
-        beginning = properties[1]
-        end = properties[2]
-        numbins = properties[3]
-        geant_observable = properties[4]
-        chi2s.append( draw_compare_plot(outputdirectory, outputname, trees, 
-            observable, geant_observable, title, beginning, end, numbins, args.noplot) )
+    ## Make plots and retireve chi2
 
-    print chi2s
+    chi2s = []
+    for obs, (title,start,end,nbins,g4obs) in features_and_properties.iteritems(): 
+        chi2s.append( draw_compare_plot(outputdirectory, outputname, trees, 
+            obs, g4obs, title, start, end, nbins, args.noplot) )
+
+    ## Calculate total chi2 summing over features and write all out to a file
+
     totchi2 = sum( [ v[0] * v[2] for v in chi2s ] ) / sum( [ v[2] for v in chi2s ] )
     totchi2_testbeam = sum( [ v[1] * v[2] for v in chi2s ] ) / sum( [ v[2] for v in chi2s ] )
     print "Overall chi2 Boole-G4 --> ", totchi2, ", Boole-Testbeam --> ", totchi2_testbeam
+    
     of = open(outputdirectory+"/chi2_"+outputname+".txt","w")
     of.write(str(totchi2)+ "   Total\n")
     of.write(str(totchi2_testbeam)+ "   Total Testbeam\n")

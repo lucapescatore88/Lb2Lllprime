@@ -82,28 +82,26 @@ SiPMResponse().ElectronicsResponse = "flat"#Use flat SiPM time response
 
 from Configurables import MCFTAttenuationTool
 att = MCFTAttenuationTool()
-att.ShortAttenuationLength = 455.6 # 200mm  # TestBeam: HD1 468.6, HD2 896.3
-att.LongAttenuationLength = 4716   # 4700mm  # TestBeam: HD1 4688, HD2 4904
-att.FractionShort = 0.2506         # 0.18 # TestBeam: HD1 0.273, HD2 0.406
+att.ShortAttenuationLength = {ShortAttLgh}
+att.LongAttenuationLength = {LongAttLgh}
+att.FractionShort = {ShortFraction}
 
 # Make sure I always hit unirradiated zone
 att.XMaxIrradiatedZone = 999999999999.#2000
 att.YMaxIrradiatedZone = -1.#500
 
-
-
 from Configurables import MCFTPhotonTool
 photon_tool = MCFTPhotonTool()
-photon_tool.PhotonsPerMeV = 126
+photon_tool.PhotonsPerMeV = {PhotonsPerMeV}
 
 from Configurables import MCFTDistributionChannelTool
 channel_tool = MCFTDistributionChannelTool()
-channel_tool.GaussianSharingWidth = 0.33
+channel_tool.GaussianSharingWidth = {PhotonWidth}
 #channel_tool.LightSharing = "old"
 
 from Configurables import MCFTDistributionFibreTool
 fibre_tool = MCFTDistributionFibreTool()
-fibre_tool.CrossTalkProb = 0.22
+fibre_tool.CrossTalkProb = {CrossTalkProb}
 
 from Configurables import MCFTPhotoelectronTool
 pe_tool = MCFTPhotoelectronTool()
@@ -159,7 +157,7 @@ hist.dump()
 
 resultPath = cfg.resultPath
 
-fileName = (files[0].split("/")[-1]).replace(".sim", "_{0}.root".format(cfg.nickname))
+fileName = (files[0].split("/")[-1]).replace(".sim", "_{{0}}.root".format(cfg.nickname))
 
 print("Outputfile: " + fileName)
 
@@ -171,7 +169,7 @@ outputTrees = []
 outputFile.cd()
 for layerNumber in layers:
   outputTrees.append(R.TTree("layer_" + str(layerNumber), "layer_" + str(layerNumber) ) )
-  sipmValPtr_thisLayer = {}
+  sipmValPtr_thisLayer = {{}}
   for sipmID in sipmIDs:
     arr = []
     for sipmChan in xrange(128):

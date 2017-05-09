@@ -28,9 +28,7 @@ class ClusterCreator{
 */
         std::vector<Cluster*>FindClustersInEventBoole(
                 const Event& event
-                , const double neighbourThreshold
-                , const double seedThreshold
-                , const double sumThreshold
+                , std::vector<float> thresholds
                 , const int maxClusterSize
                 , bool debug
                 , bool pacific

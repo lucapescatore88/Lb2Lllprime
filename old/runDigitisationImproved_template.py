@@ -1,32 +1,20 @@
 # Run Boole with the standard implementation (using the -s option)
 # or the improved implementation
 
-import argparse, pickle
+import argparse
 from glob import glob
-from setupBooleForDigitisation import *
-from param_config import get_params
 
 parser = argparse.ArgumentParser(description='Plot cluster properties from data and simulation.')
 parser.add_argument('-f', '--files', type=str, help="Path and name of the input .sim file, the * can be used as in /home/files/njob*/file.sim",
                     default="/home/vbellee/ImprovedBoole2017_01_30/testbeamRefFiles/testbeam_simulation_position_a_at_0deg.sim")
 parser.add_argument('-i', '--interactive', action = "store_true", default=False)
 parser.add_argument('-s', '--storeTestbeam', action = "store_true", default=False)
-parser.add_argument('-t', '--digitype', type=str, default="improved")
-parser.add_argument('-x', '--params', type=str, default="")
-parser.add_argument('-p', '--pacific', action="store_true")
-parser.add_argument('-ths', '--thresholds', type=str, default="[1.5,2.5,4.5]")
+parser.add_argument('-n', '--nickname', type=str, default="improved")
 parser.add_argument('-r', '--resultPath', type=str, default="")
 parser.add_argument('-d', '--DDDBtag', type=str, default='dddb-20160304')
 parser.add_argument('-c', '--CondDBtag', type=str, default='sim-20150716-vc-md100')
 
 cfg = parser.parse_args()
-if cfg.params == "" : params = get_params()
-else : params = pickle.load(open(cfg.params))
-
-files = glob(cfg.files)
-resultPath = cfg.resultPath
-fileName = (files[0].split("/")[-1]).replace(".sim", "_{0}.root".format(cfg.digitype))
-print("Outputfile: " + fileName)
 
 import GaudiPython as GP
 from GaudiConf import IOHelper
@@ -42,14 +30,15 @@ from Configurables import CondDB, DDDBConf
 importOptions('$STDOPTS/RootHist.opts')
 from Configurables import RootHistCnv__PersSvc
 RootHistCnv__PersSvc('RootHistCnv').ForceAlphaIds = True
+# should be provided by the user script, otherwise big confusion between Gaudi and ROOT
 # RootHistSvc('RootHistSvc').OutputFile = 'histo.root'
-HistogramPersistencySvc().OutputFile = fileName.replace(".root","")+'_histos.root'
+HistogramPersistencySvc().OutputFile = 'histo.root'
 
-
-from LinkerInstances.eventassoc import *
-import ROOT as R
 import array
 
+from LinkerInstances.eventassoc import *
+
+import ROOT as R
 
 def resetSipmVals(sipimValPtr):
   for layer in sipimValPtr:
@@ -88,7 +77,54 @@ appConf.TopAlg += ["MCFTDepositCreator",
 #Configure Boole
 ######################################
 
-setupBooleForDigitisation(params,cfg.digitype,eval(cfg.thresholds))
+
+from Configurables import SiPMResponse
+SiPMResponse().ElectronicsResponse = "flat"#Use flat SiPM time response 
+
+from Configurables import MCFTAttenuationTool
+att = MCFTAttenuationTool()
+att.ShortAttenuationLength = {ShortAttLgh}
+att.LongAttenuationLength = {LongAttLgh}
+att.FractionShort = {ShortFraction}
+
+# Make sure I always hit unirradiated zone
+att.XMaxIrradiatedZone = 999999999999.#2000
+att.YMaxIrradiatedZone = -1.#500
+
+
+
+from Configurables import MCFTPhotonTool
+photon_tool = MCFTPhotonTool()
+photon_tool.PhotonsPerMeV = {PhotonsPerMeV}
+
+from Configurables import MCFTDistributionChannelTool
+channel_tool = MCFTDistributionChannelTool()
+channel_tool.GaussianSharingWidth = {PhotonWidth}
+#channel_tool.LightSharing = "old"
+
+from Configurables import MCFTDistributionFibreTool
+fibre_tool = MCFTDistributionFibreTool()
+fibre_tool.CrossTalkProb = {CrossTalkProb}
+
+from Configurables import MCFTPhotoelectronTool
+pe_tool = MCFTPhotoelectronTool()
+
+from Configurables import MCFTDepositCreator
+MCFTDepositCreator().SimulationType = "improved"
+MCFTDepositCreator().SpillNames = ["/"]
+MCFTDepositCreator().SpillTimes = [0.0]
+MCFTDepositCreator().SimulateNoise = False
+MCFTDepositCreator().addTool(att)
+MCFTDepositCreator().addTool(photon_tool)
+MCFTDepositCreator().addTool(channel_tool)
+MCFTDepositCreator().addTool(fibre_tool)
+MCFTDepositCreator().addTool(pe_tool)
+
+
+from Configurables import MCFTDigitCreator
+tof = 25.4175840541
+MCFTDigitCreator().IntegrationOffset = [26 - tof, 28 - tof, 30 - tof]
+
 
 s = SimConf()
 #SimConf().Detectors = ['VP', 'UT', 'FT', 'Rich1Pmt', 'Rich2Pmt', 'Ecal', 'Hcal', 'Muon']
@@ -108,13 +144,13 @@ dre.DataOnDemand = True
 lhcbApp = LHCbApp()
 lhcbApp.Simulation = True
 
+files = []
+#For position A and 10degrees, the ganga job number is 1. Change this number to access different beam positions
+files.extend(glob(cfg.files))
 IOHelper('ROOT').inputFiles(files)
 
 
-######################################
 # Configuration done, run time!
-######################################
-
 appMgr = GP.AppMgr()
 evt = appMgr.evtsvc()
 det = appMgr.detsvc()
@@ -122,7 +158,12 @@ hist = appMgr.histSvc()
 
 hist.dump()
 
-## Create trees and variables
+resultPath = cfg.resultPath
+
+fileName = (files[0].split("/")[-1]).replace(".sim", "_{{0}}.root".format(cfg.nickname))
+
+print("Outputfile: " + fileName)
+
 outputFile = R.TFile(resultPath + fileName, "RECREATE")
 layers = range(0,1)
 sipmIDs = range(0,16)
@@ -130,55 +171,50 @@ sipmValPtr = []
 outputTrees = []
 outputFile.cd()
 for layerNumber in layers:
-    outputTrees.append(R.TTree("layer_" + str(layerNumber), "layer_" + str(layerNumber) ) )
-    sipmValPtr_thisLayer = {}
-    for sipmID in sipmIDs:
-        arr = []
-        for sipmChan in xrange(128):
-            arr.append(array.array("f", [0]))
-        sipmValPtr_thisLayer[sipmID] = arr
-        for adcChan in xrange(128):
-            name = "Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1)
-            outputTrees[-1].Branch(name, sipmValPtr_thisLayer[sipmID][adcChan] ,name + "/F")
-    sipmValPtr.append(sipmValPtr_thisLayer)
+  outputTrees.append(R.TTree("layer_" + str(layerNumber), "layer_" + str(layerNumber) ) )
+  sipmValPtr_thisLayer = {{}}
+  for sipmID in sipmIDs:
+    arr = []
+    for sipmChan in xrange(128):
+      arr.append(array.array("f", [0]))
+    sipmValPtr_thisLayer[sipmID] = arr
+    for adcChan in xrange(128):
+      outputTrees[-1].Branch("Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1), sipmValPtr_thisLayer[sipmID][adcChan] ,"Uplink_" + str(sipmID) +"_adc_" + str(adcChan+1) + "/F")
+  sipmValPtr.append(sipmValPtr_thisLayer)
 
-## Main loop on events
 nHits = 0
 while True:
-    appMgr.run(1)
+  appMgr.run(1)
 
-    if not evt['MC/Particles']:
-        print "no more particles"
-        break
+  if not evt['MC/Particles']:
+    print "no more particles"
+    break
 
-    nHits += len(evt["MC/FT/Hits"])
-    digits = evt['/Event/MC/FT/Digits'].containedObjects()
-    for digit in digits:
+  nHits += len(evt["MC/FT/Hits"])
+  
+  digits = evt['/Event/MC/FT/Digits'].containedObjects()
+  for digit in digits:
     
-        jump = False
-        hits = digit.deposit().mcHitVec()
-        for h in hits :
-            mother = h.mcParticle().mother()
-            if "NULL" not in mother.__str__() : 
-                jump = True
-                break
+    jump = False
+    hits = digit.deposit().mcHitVec()
+    for h in hits :
+        mother = h.mcParticle().mother()
+        if "NULL" not in mother.__str__() : 
+            jump = True
+            break
         
-        if jump : continue 
-        channel = digit.channelID()
-
-        ## If PACIFIC use bits: 1,2,3
-        adc = digit.photoElectrons()
-        if cfg.pacific : adc = digit.adcCount()
-
-        if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 and channel.mat()==0:
-            sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = adc
+    if jump : continue 
+    channel = digit.channelID()
+    if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 and channel.mat()==0:
+      sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = digit.photoElectrons()
  
-    for t in outputTrees: t.Fill()
-    resetSipmVals(sipmValPtr)
+  for t in outputTrees:
+    t.Fill()
+  resetSipmVals(sipmValPtr)
 
-## Write output
 outputFile.cd()
-for t in outputTrees: t.Write()
+for t in outputTrees:
+  t.Write()
 outputFile.Close()
 
 
