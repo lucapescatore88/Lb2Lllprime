@@ -276,7 +276,6 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
 
                 clustersInModule["slayer"] = clCreators["simulation"].FindClustersInEventBoole(*(data["slayer"]->at(i)), c.thrs, 100, false, (bool)c.pacific);
 
-
                 xPositions = 
                 {
                     clustersInModule["HD2"][0]->GetChargeWeightedMean() * 250.,
@@ -370,7 +369,7 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
     double meanLightYield{0};
     for(const auto& cl : clCreators["simulation"].getClusters())
     {
-        if (c.pacific) meanLightYield += cl->GetSumOfAdcValuesPacific(1.5,2.5,4.0);
+        if (c.pacific) meanLightYield += cl->GetSumOfAdcValuesPacific(cfg.thrs);
         else meanLightYield += cl->GetSumOfAdcValues();
     }
     meanLightYield /= (double)clCreators["simulation"].getNumberOfClusters();
@@ -380,7 +379,7 @@ std::pair<EDouble, EDouble> analyse(std::string file2analyse, const config& c)
     for(const auto& cl : clCreators["simulation"].getClusters())
     {
         double cur = 0.;
-        if (c.pacific)  cur = cl->GetSumOfAdcValuesPacific(1.5,2.5,4.0);
+        if (c.pacific)  cur = cl->GetSumOfAdcValuesPacific(cfg.thrs);
         else cur = cl->GetSumOfAdcValues();
 
         stdDevLightYield += (cur - meanLightYield) * (cur - meanLightYield);

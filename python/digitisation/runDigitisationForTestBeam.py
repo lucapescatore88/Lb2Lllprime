@@ -4,7 +4,6 @@
 import argparse, pickle
 from glob import glob
 from setupBooleForDigitisation import *
-from param_config import get_params
 
 parser = argparse.ArgumentParser(description='Plot cluster properties from data and simulation.')
 parser.add_argument('-f', '--files', type=str, help="Path and name of the input .sim file, the * can be used as in /home/files/njob*/file.sim",

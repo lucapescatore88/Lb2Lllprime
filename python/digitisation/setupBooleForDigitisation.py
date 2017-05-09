@@ -30,8 +30,9 @@ def setupBooleForDigitisation(params,digitype,thresholds) :
     photon_tool.PhotonsPerMeV = params["PhotonsPerMeV"]
     
     channel_tool = MCFTDistributionChannelTool()
+    print "Usinng PhotonWidth ", params["PhotonWidth"]
     channel_tool.GaussianSharingWidth = params["PhotonWidth"]
-    #channel_tool.LightSharing = "old"
+    channel_tool.LightSharing = "gauss"
     
     fibre_tool = MCFTDistributionFibreTool()
     fibre_tool.CrossTalkProb = params["CrossTalkProb"]
@@ -53,12 +54,24 @@ def setupBooleForDigitisation(params,digitype,thresholds) :
     MCFTDigitCreator().ADCThreshold1 = thresholds[0]
     MCFTDigitCreator().ADCThreshold2 = thresholds[1]
     MCFTDigitCreator().ADCThreshold3 = thresholds[2]
+
+
+def pickle_params(values, path="") :
+
+    values = get_params(values)
+    print values
+
+    pklfile = open(path+"/params.pkl","w")
+    pickle.dump(values,pklfile)
+    pklfile.close()
     
+    return path+"/params.pkl"
 
 def get_params(values = {}) :
 
     if "PhotonWidth" not in values :
         values["PhotonWidth"] = 0.33
+        #values["PhotonWidth"] = 0.45
     if "ShortAttLgh" not in values :
         values["ShortAttLgh"] = 455.6
     if "LongAttLgh" not in values :
@@ -68,6 +81,9 @@ def get_params(values = {}) :
     if "CrossTalkProb" not in values :
         values["CrossTalkProb"] = 0.22 
     if "PhotonsPerMeV" not in values :
-        values["PhotonsPerMeV"] = 126.
+        #values["PhotonsPerMeV"] = 140.
+        values["PhotonsPerMeV"] = 119.
 
     return values
+
+
