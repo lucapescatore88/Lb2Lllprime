@@ -105,6 +105,7 @@ for f in files :
 
 ## Clusterising
 files = glob(outdir+"/digitised/testbeam*.root")
+files = [ x in files if "histos" not in x ]
 if opts.doprint : print "Clustering ", len(files), " files."
 
 for f in files :

@@ -81,8 +81,7 @@ def get_params(values = {}) :
     if "CrossTalkProb" not in values :
         values["CrossTalkProb"] = 0.22 
     if "PhotonsPerMeV" not in values :
-        #values["PhotonsPerMeV"] = 140.
-        values["PhotonsPerMeV"] = 119.
+        values["PhotonsPerMeV"] = 127.
 
     return values
 
