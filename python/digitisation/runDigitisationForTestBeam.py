@@ -101,8 +101,8 @@ DigiConf().Detectors = ['VP', 'FT']
 DigiConf().EnableUnpack = True
 DigiConf().EnablePack = False
 
-dre = DecodeRawEvent()
-dre.DataOnDemand = True
+#dre = DecodeRawEvent()
+#dre.DataOnDemand = True
 
 lhcbApp = LHCbApp()
 lhcbApp.Simulation = True

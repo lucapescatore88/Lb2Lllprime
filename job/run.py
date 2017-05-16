@@ -46,10 +46,10 @@ digi_cmd    = 'mkdir -p {outdir} && cd {outdir} && '+jc.boole+'/run python {scri
 if opts.pacific : digi_cmd += '--pacific '
 digi_cmd += "  --thresholds " + opts.thresholds
 if opts.params != "" : digi_cmd += ' --params {pms} '.format(pms=opts.params)
-digi_cmd += '&> {outdir}/digilog_{name}'
+digi_cmd += ' &> {outdir}/digilog_{name}'
 
-cluster_cmd =  'mkdir -p {outdir} && cd {outdir} && lb-run Urania/v6r1 {script} -f {f} -s 1 -o {outdir} --thresholds '
-cluster_cmd += ' '.join([ str(x) for x in eval(opts.thresholds)])
+thrs = opts.thresholds.replace(","," ").replace("[","").replace("]","").replace("'","").replace("\"","")
+cluster_cmd =  'mkdir -p {outdir} && cd {outdir}  && lb-run Urania/v6r1 {script} -f {f} -s 1 -o {outdir} --thresholds '+thrs
 if opts.pacific : cluster_cmd += ' --pacific  '
 cluster_cmd += ' &> {outdir}/clusterlog_{name} '
 
@@ -58,6 +58,7 @@ compare_cmd += '-testbt btTree -g4f {g4f} -g4t statTree '
 compare_cmd += '-testbf {tbf} -simf {simf}'
 #if not opts.plot : compare_cmd += ' --noplot'
 compare_cmd += ' &> {outdir}/comparelog'
+
 
 ## Start program
 
@@ -104,8 +105,13 @@ for f in files :
     if not opts.test : sb.call(curcmd,shell=True)
 
 ## Clusterising
-files = glob(outdir+"/digitised/testbeam*.root")
-files = [ x in files if "histos" not in x ]
+print outdir+"/digitised/testbeam*.root"
+allfiles = glob(outdir+"/digitised/testbeam*.root")
+print allfiles
+files = []
+for x in allfiles :
+    if "histos" not in x : files.append(x)
+print files
 if opts.doprint : print "Clustering ", len(files), " files."
 
 for f in files :
