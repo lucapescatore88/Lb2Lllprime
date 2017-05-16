@@ -16,6 +16,15 @@ std::vector<Cluster*> ClusterCreator::FindClustersInEventBoole(const Event& even
         std::vector<float> thresholds, int maxClusterSize,
         bool debug, bool pacific)
 {
+
+    if (thresholds.size()<3) 
+    {
+        //std::cout << "Using default thresholds" << std::endl;
+        thresholds.clear();
+        thresholds.push_back(1.5);
+        thresholds.push_back(2.5);
+        thresholds.push_back(4.5);
+    }
     return FindClustersInEventBoole(event, 
             thresholds[0], thresholds[1], thresholds[2], 
             maxClusterSize, debug, pacific);
