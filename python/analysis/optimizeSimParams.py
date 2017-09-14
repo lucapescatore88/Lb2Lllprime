@@ -17,7 +17,6 @@ if repo is None :
     print "Please setup the environment befire running!"
     sys.exit()
 
-from param_config import configure_params, pickle_params
 import job_config as jc
 from job.utils.value import Value
 from job.utils.wheel import Wheel
@@ -25,6 +24,18 @@ from job.utils.math_functions import *
 from job.utils.submit import launch_interactive
 
 wheel = Wheel()
+
+def pickle_params(values, path="") :
+
+    values = get_params(values)
+    print values
+
+    pklfile = open(path+"/params.pkl","w")
+    pickle.dump(values,pklfile)
+    pklfile.close()
+    
+    return path+"/params.pkl"
+
 
 class OptimizeParams :
 

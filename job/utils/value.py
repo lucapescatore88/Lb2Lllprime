@@ -7,6 +7,7 @@ import math
 class Value :
 
     def __init__(self,val = 0,err = 0,scale = 0,error=None):
+
         self.val = float(val)
         self.err = float(err)
         self.scale = scale
@@ -18,30 +19,46 @@ class Value :
 
 
     def __add__(self,other) :
+
+        if not type(other)==type(self) and not (type(other)==int or type(other)==float) : return None
+        if type(other)==int or type(other)==float : other = Value(other)
+
         val = self.val * 10**self.scale  + other.val * 10**other.scale
         err = self.err * 10**self.scale + other.err * 10**other.scale
+        
         return Value(val,err)
 
     def __sub__(self,other) :
+
+        if not type(other)==type(self) and not (type(other)==int or type(other)==float) : return None
+        if type(other)==int or type(other)==float : other = Value(other)
+
         val = self.val * 10**self.scale - other.val * 10**other.scale
         err = self.err * 10**self.scale + other.err * 10**other.scale
+
         return Value(val,err) 
 
     def __div__(self,other) :
 
+        if not type(other)==type(self) and not (type(other)==int or type(other)==float) : return None
+        if type(other)==int or type(other)==float : other = Value(other)
+ 
         if other.val == 0: 
             print "ATENTION: Cannot divide by 0"
             return 
         
-        if self.val == 0:
-            return Value(0.,0.)
+        if self.val == 0: return Value(0.,0.)
 
         val = self.val / other.val
         err = val * math.sqrt( (self.err / self.val)**2 + (other.err / other.val)**2 )
         scale = self.scale - other.scale
+        
         return Value(val,err,scale)
 
     def __mul__(self,other) :
+       
+        if not type(other)==type(self) and not (type(other)==int or type(other)==float) : return None
+        if type(other)==int or type(other)==float : other = Value(other)
         
         if self.val == 0 or other.val == 0:
             return Value(0.,0.)
@@ -49,7 +66,29 @@ class Value :
         val = self.val * other.val
         err = val * math.sqrt( (self.err / self.val)**2 + (other.err / other.val)**2 )
         scale = self.scale + other.scale
+               
         return Value(val,err,scale)
+
+    def __radd__(self,other) :
+
+        return self + Value(other)
+
+    def __rmul__(self,other) :
+
+        return self * Value(other)
+
+    def __rsub__(self,other) :
+
+        return Value(other) - self
+
+    def __rdiv__(self,other) :
+
+        return Value(other) / self
+
+    #def __neg__(self) :
+    #
+    #    self.val = - self.val
+    #    return self
 
     def __repr__(self) :
         
