@@ -61,8 +61,6 @@ if __name__ == "__main__" :
         help="Copy the executable only once in the top folder (and not in each job folders)" )
     parser.add_argument("--local", dest="local",  action="store_true",
         help="Launch the jobs locally (and not in the batch system)" )
-    parser.add_argument("--noscript", dest="noscript",  action="store_true",
-        help="Does not put the automatic ./ in front of the executable" )
     parser.add_argument("-m", dest="mail", default = "", action="store_const", const = "-u "+os.environ["USER"]+"@cern.ch",
         help="When job finished sends a mail to USER@cern.ch" )
     parser.add_argument("-in", dest="infiles", default = "", help="Files to copy over")
@@ -101,10 +99,9 @@ if __name__ == "__main__" :
 
     if(opts.unique) : copyto = subdirname
     else : copyto = dirname
-    if '/' not in execname :
-        os.system("cp " + execname + " " + copyto )
-    else :
-        print "Executable is a path. If you used all absolute paths the jobs will work anyway."
+    
+    os.system("cp " + execname + " " + copyto )
+    print("cp " + execname + " " + copyto )
     
     for arg in opts.infiles.split() :
         os.system("cp " + arg + " " + copyto )
@@ -120,18 +117,21 @@ if __name__ == "__main__" :
     runfile.write( "cd " + dirname + "\n")
     if opts.setup != "" :
         runfile.write(opts.setup + "\n")
-    if exe is None and not opts.noscript:   ### Ensure executable
-        runfile.write("chmod 755 " + copyto + "/" +execname +'\n')
-    if opts.noscript :
-        runfile.write( opts.command)
-    elif not opts.unique :                    ### Write command in appropriate way
-        runfile.write( dirname+'/'+opts.command.replace('./','') )
-    elif exe is None :
-        runfile.write( subdirname+'/'+opts.command.replace('./','') )
+
+    if '/' in execname:
+        pos = execname[::-1].find("/")
+        execshortname = execname[len(execname)-pos:]
+    else : execshortname = execname
+    if exe is None :   ### Ensure executable
+        runfile.write("chmod 755 " + copyto + "/" +execshortname +'\n')
+
+    if exe is None:
+        runfile.write( '{dir} {args}'.format(dir=copyto+"/"+execshortname,args=' '.join(args)) )
     else :
-        runfile.write( '{exe} {dir} {args}'.format(exe=exe,dir=subdirname+"/"+execname,args=' '.join(args)) )
-    if opts.local or opts.interactive :     ### Output
-        runfile.write( " >& " + dirname + "/out " )
+        runfile.write( '{exe} {dir} {args}'.format(exe=exe,dir=copyto+"/"+execshortname,args=' '.join(args)) )
+
+    #if opts.local or opts.interactive :     ### Output
+    runfile.write( " >& " + dirname + "/out " )
     runfile.close()
     os.system( "chmod 755 " + dirname + "/run.sh" )
 
@@ -149,7 +149,8 @@ if __name__ == "__main__" :
         if opts.interactive :
             launch_interactive(dirname)
         else :
-            cmd = "bsub -R 'pool>30000' -o {dir}/out -e {dir}/err \
+            home = os.getenv('HOME') 
+            cmd = "bsub -R 'pool>10000' -o "+home+"/out -e "+home+"/err \
                     -q {queue} {mail} -J {jname} < {dir}/run.sh".format(
                         dir=dirname,queue=opts.queue,
                         mail=opts.mail,jname=opts.subdir+opts.jobname)

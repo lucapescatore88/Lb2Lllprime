@@ -5,7 +5,7 @@
 ## N.B.: Requires setting up the enviroment by source job/setup.sh
 ## N.B.: Options such as output directory, data to compare, etc are set via job/job_options.py
 
-import os, time, shutil, sys
+import os, time, shutil, sys, pickle
 import subprocess as sb
 from glob import glob
 import ROOT, math
@@ -22,6 +22,7 @@ from job.utils.value import Value
 from job.utils.wheel import Wheel
 from job.utils.math_functions import *
 from job.utils.submit import launch_interactive
+from setupBooleForDigitisation import get_params
 
 wheel = Wheel()
 
@@ -118,7 +119,7 @@ class OptimizeParams :
             
             runf = outdir + "/run.sh"
             print self.cmd+" --params "+params+ " --outdir " + outdir
-            print "chmod +x " + runf + " && " + runf
+            #print "chmod +x " + runf + " && " + runf
             sb.call(self.cmd+" --params "+params+ " --outdir " + outdir, shell=True)
             
         elif is_lxplus :

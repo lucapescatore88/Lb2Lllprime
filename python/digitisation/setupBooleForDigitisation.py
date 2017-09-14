@@ -1,21 +1,21 @@
-from Configurables import SiPMResponse
-from Configurables import MCFTAttenuationTool
-from Configurables import MCFTPhotonTool
-from Configurables import MCFTDistributionChannelTool
-from Configurables import MCFTDistributionFibreTool
-from Configurables import MCFTPhotoelectronTool
-from Configurables import MCFTDepositCreator
-from Configurables import MCFTDigitCreator
-from Configurables import FTClusterCreator
-
 def setupBooleForDigitisation(params,digitype,thresholds) :
+
+    from Configurables import SiPMResponse
+    from Configurables import MCFTAttenuationTool
+    from Configurables import MCFTPhotonTool
+    from Configurables import MCFTDistributionChannelTool
+    from Configurables import MCFTDistributionFibreTool
+    from Configurables import MCFTPhotoelectronTool
+    from Configurables import MCFTDepositCreator
+    from Configurables import MCFTDigitCreator
+    from Configurables import FTClusterCreator
 
     print "Setting Boole:"
     print "Parameters -> ", params
     print "Thresholds -> ", thresholds
     print "Simulation type -> ", digitype
 
-    SiPMResponse().ElectronicsResponse = "flat"#Use flat SiPM time response 
+    SiPMResponse().ElectronicsResponse = "flat" # Use flat SiPM time response 
     
     att = MCFTAttenuationTool()
     att.ShortAttenuationLength = params["ShortAttLgh"]
@@ -56,16 +56,16 @@ def setupBooleForDigitisation(params,digitype,thresholds) :
     MCFTDigitCreator().ADCThreshold3 = thresholds[2]
 
 
-def pickle_params(values, path="") :
-
-    values = get_params(values)
-    print values
-
-    pklfile = open(path+"/params.pkl","w")
-    pickle.dump(values,pklfile)
-    pklfile.close()
-    
-    return path+"/params.pkl"
+#def pickle_params(values, path="") :
+#
+#    values = get_params(values)
+#    print values
+#
+#    pklfile = open(path+"/params.pkl","w")
+#    pickle.dump(values,pklfile)
+#    pklfile.close()
+#    
+#    return path+"/params.pkl"
 
 def get_params(values = {}) :
 
