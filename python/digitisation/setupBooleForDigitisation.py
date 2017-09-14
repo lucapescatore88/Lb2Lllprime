@@ -17,14 +17,8 @@ def setupBooleForDigitisation(params,digitype,thresholds) :
 
     SiPMResponse().ElectronicsResponse = "flat"#Use flat SiPM time response 
     
-    att = MCFTAttenuationTool()
-    att.ShortAttenuationLength = params["ShortAttLgh"]
-    att.LongAttenuationLength = params["LongAttLgh"]
-    att.FractionShort = params["ShortFraction"]
-    
-    # Make sure I always hit unirradiated zone
-    att.XMaxIrradiatedZone = 999999999999.#2000
-    att.YMaxIrradiatedZone = -1.#500
+    att = MCFTG4AttenuationTool()
+    att.MirrorReflectivity = params["MirrorRefl"]
     
     photon_tool = MCFTPhotonTool()
     photon_tool.PhotonsPerMeV = params["PhotonsPerMeV"]
@@ -82,7 +76,7 @@ def get_params(values = {}) :
         values["CrossTalkProb"] = 0.22 
     if "PhotonsPerMeV" not in values :
         values["PhotonsPerMeV"] = 127.
+    if "MirrorRefl" not in values:
+        values["MirrorRefl"] = 1.0
 
     return values
-
-
