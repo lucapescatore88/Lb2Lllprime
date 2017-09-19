@@ -54,7 +54,8 @@ if opts.pacific : cluster_cmd += ' --pacific  '
 cluster_cmd += ' &> {outdir}/clusterlog_{name} '
 
 compare_cmd = 'mkdir -p {outdir} && cd {outdir} && source SetupProject.sh root &> {outdir}/setuplog && python {script} -d {outdir} '
-compare_cmd += '-testbt btTree -g4f {g4f} -g4t statTree ' 
+compare_cmd += '-testbt btTree '
+if jc.g4_sim is not None : compare_cmd += ' -g4f {g4f} -g4t statTree ' 
 compare_cmd += '-testbf {tbf} -simf {simf}'
 #if not opts.plot : compare_cmd += ' --noplot'
 compare_cmd += ' &> {outdir}/comparelog'
@@ -102,11 +103,16 @@ for f in files :
     name = os.path.splitext(name)[0]
     curcmd = digi_cmd.format(script=digi_script,f=f,outdir=outdir+"/digitised/",name=name,digitype=opts.digitype)
     if opts.doprint : print curcmd
-    if not opts.test : sb.call(curcmd,shell=True)
+    if not opts.test : 
+        print "Digitising..."
+        sb.call(curcmd,shell=True)
+        print curcmd
 
 ## Clusterising
-print outdir+"/digitised/testbeam*.root"
+
+#print outdir+"/digitised/testbeam*.root"
 allfiles = glob(outdir+"/digitised/testbeam*.root")
+
 print allfiles
 files = []
 for x in allfiles :
@@ -122,7 +128,9 @@ for f in files :
     name = os.path.splitext(name)[0]
     curcmd = cluster_cmd.format(script=cluster_script,f=f,outdir=outdir+"/clusters/",name=name)
     if opts.doprint : print curcmd
-    if not opts.test : sb.call(curcmd,shell=True)  
+    if not opts.test : 
+        print "Clusterising..."
+        sb.call(curcmd,shell=True)  
 
 ## Compring plots
 files = glob(outdir+"/clusters/*.root")
@@ -142,13 +150,16 @@ for f in files :
     testbeam_file += "-angle" + ang
     testbeam_file += "_datarun_ntuple_corrected_clusterAnalyis.root"
     
-    g4file = "'"+jc.g4_sim+"/statFile_CT_PosA_{ang}degreepi-_-120_20000_5,6_5,5.root'".format(ang=ang)
-
-    curcmd = compare_cmd.format(script=compare_script,simf=f,outdir=outdir+"/comparisons/",g4f=g4file,tbf=testbeam_file)
-    #curcmd = compare_cmd.format(script=compare_script,simf=f,outdir=outdir+"/comparisons/",tbf=testbeam_file)
+    if jc.g4_sim is not None :
+        g4file = "'"+jc.g4_sim+"/statFile_CT_PosA_{ang}degreepi-_-120_20000_5,6_5,5.root'".format(ang=ang)
+        curcmd = compare_cmd.format(script=compare_script,simf=f,outdir=outdir+"/comparisons/",g4f=g4file,tbf=testbeam_file)
+    else :
+        curcmd = compare_cmd.format(script=compare_script,simf=f,outdir=outdir+"/comparisons/",tbf=testbeam_file)
 
     if opts.doprint : print curcmd
-    if not opts.test : sb.call(curcmd,shell=True)
+    if not opts.test : 
+        print "Comparing..."
+        sb.call(curcmd,shell=True)
 
 # Pack everything into a tar and send it to "mail"
 if not opts.test and send :
