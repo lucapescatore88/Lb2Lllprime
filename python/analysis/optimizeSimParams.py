@@ -17,7 +17,7 @@ if repo is None :
     print "Please setup the environment befire running!"
     sys.exit()
 
-from param_config import configure_params, pickle_params
+from python.digitisation.setupBooleForDigitisation import pickle_params
 import job_config as jc
 from job.utils.value import Value
 from job.utils.wheel import Wheel
