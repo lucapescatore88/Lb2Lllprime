@@ -25,6 +25,7 @@ from job.utils.math_functions import *
 from job.utils.submit import launch_interactive
 
 wheel = Wheel()
+avail_vars = ['CrossTalkProb','MirrorRefl','PhotonsPerMeV']
 
 class OptimizeParams :
 
@@ -33,10 +34,10 @@ class OptimizeParams :
     chi2_distr = []
     curiter = 0
     ntotpoints = 1
-    launch_modes = ["local","interactive","batch"]
+    launch_modes = ["local","batch"]
 
     def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", 
-            forcenpts = False, digitype = "detailed", pacific = False, thresholds = "'[1.5,2.5,4.5]'") :
+            forcenpts = False, digitype = "detailed", pacific = False, thresholds = "'[1.5,2.5,4.5]'", verb = False) :
 
         self.outdir = outdir
         self.niterations = niter
@@ -47,6 +48,7 @@ class OptimizeParams :
         self.digitype = digitype
         self.pacific = pacific
         self.thresholds = thresholds
+        self.verb = verb
         pac = ""
         if self.pacific : pac = " --pacific "
         self.cmd = "python "+repo+"/job/run.py --digitype {dtype} {pacific} --thresholds {thresholds}".format(
@@ -96,8 +98,6 @@ class OptimizeParams :
 
         host = os.getenv("HOSTNAME")
         is_lxplus = ( "lxplus" in host )
-        if not is_lxplus and "lphe" not in host :
-            print "This script is made to run only on lxplus or EPFL cluster. Go there!"
         if not is_lxplus and self.launch_mode == "interactive" :
             print "Interactive mode is only possible on lxplus. Switching to batch."
             self.launch_mode = "batch"
@@ -106,26 +106,19 @@ class OptimizeParams :
         if self.launch_mode == "local" :
             
             runf = outdir + "/run.sh"
-            print self.cmd+" --params "+params+ " --outdir " + outdir
-            print "chmod +x " + runf + " && " + runf
+            if self.verb : print self.cmd+" --params "+params+ " --outdir " + outdir
+            #print "chmod +x " + runf + " && " + runf
             sb.call(self.cmd+" --params "+params+ " --outdir " + outdir, shell=True)
             
-        elif is_lxplus :
+        elif is_lxplus or "lphe" in host :
         
-            ## Command for parallel running on lxplus in interactive mode
-            ##if self.launch_mode == "interactive" :
-            ##    launch_interactive(outdir)
-            ##
-            ## Command for prallel running on lxplus bach system
-            ##else :
-                
             batch_cmd = "bsub -R 'pool>30000' -o {dir}/out -e {dir}/err -q {queue} -J {jname} < {dir}/run.sh"
             batch_cmd = batch_cmd.format(dir=outdir,queue="1nd",jname=outdir)
-            print batch_cmd
+            if self.verb : print batch_cmd
             sb.call(batch_cmd,shell=True)
 
-        else :
-            print "You are not on Lxplus, you can't run in batch mode"
+        else : print "This script is made to run only on lxplus or EPFL cluster. Go there!"
+        
 
     def send_jobs(self) :
 
@@ -157,7 +150,7 @@ class OptimizeParams :
 
             frun = open(outdir + "/run.sh","w")
             frun.write("source "+repo+"/setup.sh &> setuplog\n")
-            frun.write(self.cmd+" --params "+param_file + " --outdir " + outdir)
+            frun.write(self.cmd + " --params {params} --outdir {outdir} ".format(params=param_file,outdir=outdir) )
             frun.close()
             sb.call("chmod +x " + outdir + "/run.sh",shell=True)
 
@@ -191,7 +184,8 @@ class OptimizeParams :
             msg = "\r  "+w+"   Iteration {0}/{1}, jobs finished {2}/{3}"
             sys.stdout.write(msg.format(self.curiter,self.niterations,nfiles,self.ntotpoints))
             sys.stdout.flush()
-            if nfiles > 0 and nfiles % int( self.ntotpoints ) == 0 : break
+            #if (nfiles > 0 and nfiles % int( self.ntotpoints ) == 0) or nfiles >= self.ntotpoints*self.curniter : break
+            if nfiles >= self.ntotpoints : break
 
         print "\nIteration {0}/{1}. Production finished. Calculating chi2.......".format(self.curiter,self.niterations)
         for d in glob(self.outdir+"/"+str(self.curiter)+"/opt*") :
@@ -204,17 +198,13 @@ class OptimizeParams :
             
             chi2 = 0
             chi2files = glob(d+"/comparisons/chi2*.txt")
-            if len(chi2files) == 0: print d
+            if len(chi2files) == 0 : print d
             for f in chi2files :
                 
-                if jc.sample_to_compare == "G4" :
-                    line = open(f).readlines()[0]  ## G4-Boole chi2
-                else :
-                    line = open(f).readlines()[1]   ## Testbeam-Boole chi2
+                line = open(f).readlines()[0]   ## Testbeam-Boole chi2
                 elements = line.split()
                 chi2 += float(elements[0])
-            
-            chi2 /= len(chi2files)
+                 
             self.chi2_distr.append( (tuple(values), chi2) )
 
     def optimize(self) :
@@ -251,25 +241,14 @@ class OptimizeParams :
             self.collect_data()
             bestpoints = self.find_best()
         
-        print "\n\n** Optimization done! **\nBest point: "
+        print "\n** Optimization done! **\nBest point: "
         print bestpoints
         self.make_plot()
-
-        #odir = self.outdir+"/best"
-        #if not os.path.exists(odir) : os.mkdir(odir)
-        #config_file = configure_params(bestpoints,odir+"/")
-        #    
-        #frun = open(odir + "/run.sh","w")
-        #frun.write("source "+repo+"/job/setup.sh &> setuplog\n")
-        #frun.write("python "+repo+"/job/run.py " + odir + "/ " + config_file + " --plot")
-        #frun.close()
-        #
-        #self.launch(odir,config_file)
 
     def make_plot(self) :
 
         c = ROOT.TCanvas()
-        rfile = ROOT.TFile("optimization.root","recreate")
+        rfile = ROOT.TFile(self.outdir+"/optimization.root","recreate")
         for i,v in enumerate(self.vorder) :
             chi21D = slice_best(i,self.chi2_distr)
             sorted_list = sorted( chi21D, key=lambda x:x[0][i] )
@@ -328,13 +307,18 @@ if __name__ == '__main__':
     parser.add_argument("-d","--digi", default="detailed" )
     parser.add_argument("-t","--thresholds", default="'[1.5,2.5,4.5]'")
     parser.add_argument("-p","--pacific",  action='store_true')
+    parser.add_argument("-v","--verb",  action='store_true')
     parser.add_argument("variables",default = "[Var('CrossTalkProb',0.20,0.40,19)]")
     opts = parser.parse_args()
 
     variables = eval(opts.variables)
+    for v in variables :
+        if v.name not in avail_vars :
+            print "Variable",v.name,"unknown"
+            sys.exit()
 
     optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, 
-            digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds)
+            digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds, verb=opts.verb)
     if opts.local : optimizer.set_launch_mode("local")
     else : optimizer.set_launch_mode("batch")
 

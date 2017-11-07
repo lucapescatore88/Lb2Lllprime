@@ -12,153 +12,118 @@ gROOT.ProcessLine('.x '+repo+'/job/lhcbStyle.C')
 
 colors = [1,4,2,3,7,6,8,9]
 
-def findMax(tree,variable) :
+def format_hist(h,it) :
+    
+    h.SetLineColor(colors[it])
+    h.SetLineWidth(2)
+    h.SetStats(False)
+    h.SetMarkerStyle(20)
+    h.SetMarkerColor(colors[it])
+    #h.Sumw2()
+    h.SetOption("E")
+    h.Scale(1./h.Integral())
 
-    tree.Draw(variable+">>htest")
-    h = gPad.GetPrimitive("htest")
-    binmax = h.GetMaximumBin()
-    return h.GetXaxis().GetBinCenter(binmax)
+def get_tb_feature(f,fil,htmp) :
 
-def draw_compare_plot(outputdirectory, outputname, trees, observable, geant_observable, title, beginning, end, numbins, noplot):
+    tree = fil.Get("btTree")
+    h = htmp.Clone("h"+f+"TestBeam")
+    tree.Draw(f+">>"+h.GetName())
+    return h
 
-    ## Create teplate histograms
+def get_sim_feature(f,fil) :
+    
+    return fil.Get("FTClusterMonitor/"+f)
+       
+def mychi2(h1,h2,xmin,xmax) :
 
-    histos = {}
-    boolehisto = None
-    for it,t in enumerate(trees) :
-        key = t[0].replace(" ","")
-        name = key+observable
-        h = TH1F(name,name,numbins, beginning, end)
-        h.SetLineColor(colors[it])
-        h.SetLineWidth(2)
-        h.SetStats(False)
-        h.SetMarkerStyle(20)
-        h.SetMarkerColor(colors[it])
-        h.Sumw2()
-        h.SetOption("E")
-        histos[key] = h
-        if 'Boole' in name and boolehisto is None :
-            boolehisto = h
-            print "Simulaiton histogram for comparisons is", name.replace(observable,"")
+    ndf = 0
+    chi2 = 0
+    for b in range(1,h1.GetNbinsX()+1) :
 
-    ## Fill histrograms
-    leg = TLegend(0.6,0.7,0.93,0.89)
-    for i,t in enumerate(trees) :
-        name = t[0].replace(" ","")+observable
-        if "Geant" in t[0] : t[1].Draw(geant_observable+'>>'+name)
-        elif "Beam" in t[0] :
-            #curmax = findMax(t[1],"distance_from_track")
-            t[1].Draw(geant_observable+'>>'+name)#,"abs(distance_from_track - {curmax}) < 100".format(curmax=curmax))
-        else : t[1].Draw(observable+'>>'+name)
-        leg.AddEntry(histos[name.replace(observable,"")],t[0].replace('Beam','beam'),"l")
+        x1 = h1.GetBinCenter(b)
+        if x1 < xmin or x1 > xmax : continue
+        
+        y1 = h1.GetBinContent(b)
+        y1err = h1.GetBinError(b)
+        y2 = h2.GetBinContent(b)
+        y2err = h2.GetBinError(b)
 
-    ## Calculate chi2 TB/Boole and G4/Boole   
-    chi2ndf = -1
-    chi2ndf_testbeam = -1
+        if y1 <= 0 and y2 <= 0 : continue 
+        chi2 += (y1-y2)*(y1-y2)/float(y1+y2)
+        ndf += 1
 
-    if "TestBeamdata" in histos and boolehisto is not None :
-        chi2ndf_testbeam = histos["TestBeamdata"].Chi2Test(boolehisto,"CHI2/NDF")
-    if "Geant4simulation" in histos and boolehisto is not None :
-        chi2ndf = histos["Geant4simulation"].Chi2Test(boolehisto,"CHI2/NDF")
-
-    if noplot : return chi2ndf, chi2ndf_testbeam, numbins, observable
-
-    ## Plot
-
-    hs = THStack ("hs",'')
-    for hn,h in histos.iteritems() :
-        h.Scale(1./h.Integral())
-        hs.Add(h)
-    hs.Print()
-
-    outfile = TFile(outputdirectory+outputname+"_"+observable+".root","RECREATE")
-    canvas = TCanvas()
-    gStyle.SetOptStat("")
-
-    hs.Draw("nostack")
-    hs.GetXaxis().SetTitle(title)
-    hs.GetYaxis().SetTitle('A.U.')
-
-    leg.Draw("same")
-    canvas.Print(outputdirectory+outputname+'_'+observable+'.png')
-    canvas.Print(outputdirectory+outputname+'_'+observable+'.C')
-    canvas.Write()
-    outfile.Write()
-    outfile.Close()
-
-    return chi2ndf, chi2ndf_testbeam, numbins, observable
+    return chi2, ndf
 
 if __name__ == '__main__':
 
-    ###Parser to use the file externally
+    ### Parser to use the file externally
 
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-ni", "--nickname" , default="")
-    parser.add_argument("-d" , "--outputdirectory" , default="")
+    parser.add_argument("-d" , "--outdir" , default="")
     parser.add_argument("-testbf", "--testbf" , default=None, help = 'Name of the testbeam data file')
     parser.add_argument("-simf", "--simf" , default=None, help = 'Name of the simulation file')
     parser.add_argument("-simconfig", "--simconfig" , default=None, help = 'File contaiing config dictionary for more than one simulation')
-    parser.add_argument("-g4f", "--g4f" , default=None , help = 'Name of the Geant4 simulation file')
     parser.add_argument("-testbt", "--testbt" , default="clusterAnalysis")
-    parser.add_argument("-simt", "--simt" , default="clusterAnalysis")
-    parser.add_argument("-g4t", "--g4t" , default="ClusterTree")
     parser.add_argument("--noplot" , action="store_true")
     args = parser.parse_args()
 
-    #features_and_properties = {'clusterSize'       : ('Cluster Size', 1, 7, 6, 'Clustersize'),
-    #                           'sumCharge'         : ('Total cluster charge', 0, 80, 80, 'Clustercharge'), 
-    #                           'maxCharge'         : ('Charge of the dominant channel in cluster', 0, 60, 60, 'highest_channel')}
-    features_and_properties = { 'clusterSize'       : ('Cluster Size', 1, 7, 6, 'clusterSize'),
-                                'sumCharge'         : ('Total cluster charge', 0, 80, 80, 'clusterCharge') }
-
-
-    ### Define files to be read and the range of the histograms
-
-    outputname = "comparison"
-    outputdirectory = args.outputdirectory
+    features = { 'clusterSize'       : {'title' : 'Cluster Size', 'min' : 0, 'max' : 6, 'sim' : 'FullClusterSize'},
+                 'clusterCharge'     : {'title' : 'Total cluster charge', 'min' : 5, 'max' : 40, 'sim' : 'FullClusterCharge'} }
     
-    trees = []
-
-    if args.testbf is not None :
-        trees.append( ( "Test Beam data", TChain(args.testbt)) )
-        trees[-1][1].AddFile(args.testbf)
-        
-    if args.simf is not None :
-        trees.append( ("Boole simulation", TChain(args.simt)) )
-        #trees.append( ("Simulation", TChain(args.simt)) )
-        trees[-1][1].AddFile(args.simf)
-        outputname = (args.simf.split("/")[-1]).replace(".root", "_{0}".format(args.nickname))
-    elif args.simconfig is not None:
-        simfiles =  eval(open(args.simconfig).read())
-        for lab,f in simfiles.iteritems() :
-            trees.append( (lab, TChain(args.simt)) )
-            trees[-1][1].AddFile(f)
-            outputname = (f.split("/")[-1]).replace(".root", "_{0}".format(args.nickname))
-
-    if args.g4f is not None :
-        trees.append( ("Geant4 simulation", TChain(args.g4t)) )
-        trees[-1][1].AddFile(args.g4f)
-
-    ## Make plots and retireve chi2
+    tbFile = TFile.Open(args.testbf)
+    simFile = TFile.Open(args.simf)
+    outfile = TFile(args.outdir+"comparisons.root","RECREATE")
 
     chi2s = []
-    for obs, (title,start,end,nbins,g4obs) in features_and_properties.iteritems(): 
-        chi2s.append( draw_compare_plot(outputdirectory, outputname, trees, 
-            obs, g4obs, title, start, end, nbins, args.noplot) )
+    canvas = TCanvas()
+    gStyle.SetOptStat("")
+    for f,prop in features.iteritems() :
+
+        leg = TLegend(0.6,0.7,0.93,0.89)
+        
+        hs  = get_sim_feature(prop['sim'],simFile)
+        htb = get_tb_feature(f,tbFile,hs)
+
+        format_hist(htb,1)
+        print "TB Mean", f, os.path.basename(args.testbf).replace(".root",""), "---->", htb.GetMean(), htb.GetMeanError()
+        format_hist(hs,2)
+        print "Sim Mean", f, os.path.basename(args.testbf).replace(".root",""), "---->", hs.GetMean(), hs.GetMeanError()
+
+        #chi2.append( (htb.Chi2Test(hs,"CHI2/NDF P WW"),htb.GetNbinsX(),prop[4],htb.KolmogorovTest(hs,"M")) ) 
+        chi2, ndf = mychi2(htb,hs,prop['min'],prop['max'])
+        chi2s.append( (chi2/float(ndf), ndf, prop['sim'], htb.KolmogorovTest(hs,"M")) ) 
+
+        leg.AddEntry(htb,"Test Beam","p")
+        leg.AddEntry(hs,"Simulation","p")
+
+        htb.Draw()
+        htb.GetXaxis().SetTitle(prop['title'])
+        htb.GetYaxis().SetTitle('A.U.')
+        hs.Draw("same")
+
+        leg.Draw("same")
+        cname = args.outdir+'comparison_{f}_{inpt}'.format(f=f,inpt=os.path.basename(args.testbf))
+        canvas.Print(cname+'.pdf')
+        canvas.Print(cname+'.C')
+        canvas.Write()
+        
+    outfile.Close()
 
     ## Calculate total chi2 summing over features and write all out to a file
-
-    totchi2 = sum( [ v[0] * v[2] for v in chi2s ] ) / sum( [ v[2] for v in chi2s ] )
-    totchi2_testbeam = sum( [ v[1] * v[2] for v in chi2s ] ) / sum( [ v[2] for v in chi2s ] )
-    print "Overall chi2 Boole-G4 --> ", totchi2, ", Boole-Testbeam --> ", totchi2_testbeam
     
-    of = open(outputdirectory+"/chi2_"+outputname+".txt","w")
-    of.write(str(totchi2)+ "   Total\n")
-    of.write(str(totchi2_testbeam)+ "   Total Testbeam\n")
+    totchi2 = sum( [ v[0] * v[1] for v in chi2s ] ) / float(sum( [ v[1] for v in chi2s ] ))
+    totKolm = sum( [ v[3] * v[1] for v in chi2s ] ) / float(sum( [ v[1] for v in chi2s ] ))
+    print "Chi2 Boole-Testbeam --> ", totchi2
+    print "Kolmogorov Boole-Testbeam --> ", totchi2
+   
+    of = open(args.outdir+"/chi2_comparisons_{inpt}.txt".format(inpt=os.path.basename(args.testbf)),"w")
+    of.write(str(totchi2)+ "   Total Chi2\n")
+    of.write(str(totKolm)+ "   Total Kolmogorov\n")
     for v in chi2s : 
-        of.write("{0} {1} {2}\n".format(v[0],v[2],v[3]))
-        of.write("{0} {1} {2} Testbeam\n".format(v[1],v[2],v[3]))
+        of.write("Chi2 {0} {1} {2}\n".format(v[2],v[0],v[1]))
+        of.write("Kolmogorov {0} {1} {2}\n".format(v[3],v[0],v[1]))
     of.close()
 
 

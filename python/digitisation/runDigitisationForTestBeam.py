@@ -15,7 +15,7 @@ parser.add_argument('-x', '--params', type=str, default="")
 parser.add_argument('-p', '--pacific', action="store_true")
 parser.add_argument('-ths', '--thresholds', type=str, default="[1.5,2.5,4.5]")
 parser.add_argument('-r', '--resultPath', type=str, default="")
-parser.add_argument('-d', '--DDDBtag', type=str, default='FTv63') #default='dddb-20160304')
+parser.add_argument('-d', '--DDDBtag', type=str, default='upgrade/dddb-20170301') #default='dddb-20160304')
 parser.add_argument('-c', '--CondDBtag', type=str, default='upgrade/dev-scifi-attenuationmap') #default='sim-20150716-vc-md100')
 
 cfg = parser.parse_args()
@@ -30,8 +30,8 @@ print("Outputfile: " + fileName)
 
 from Gaudi.Configuration import *
 def fix_upgrade_dddb_tag():
-    allConfigurables['ToolSvc.GitDDDB'].Commit = 'FTv63'
-    allConfigurables['ToolSvc.GitSIMCOND'].Commit = 'upgrade/dev-scifi-attenuationmap'
+    allConfigurables['ToolSvc.GitDDDB'].Commit = cfg.DDDBtag
+    allConfigurables['ToolSvc.GitSIMCOND'].Commit = cfg.CondDBtag
 appendPostConfigAction(fix_upgrade_dddb_tag)
 
 import GaudiPython as GP
@@ -40,9 +40,6 @@ from Gaudi.Configuration import *
 from Configurables import LHCbApp, ApplicationMgr, DataOnDemandSvc, Boole
 from Configurables import SimConf, DigiConf, DecodeRawEvent
 from Configurables import CondDB, DDDBConf
-
-#Temporary
-#Boole().DataType   = "Upgrade"
 
 # ROOT persistency for histograms
 importOptions('$STDOPTS/RootHist.opts')
@@ -66,8 +63,6 @@ def resetSipmVals(sipimValPtr):
 LHCbApp().Simulation = True
 #LHCbApp().Histograms = 'Default'
 CondDB().Upgrade = True
-## New numbering scheme. Remove when FT60 is in nominal CondDB.
-CondDB().addLayer(dbFile = "/eos/lhcb/wg/SciFi/Custom_Geoms_Upgrade/databases/DDDB_FT61_noEndplug.db", dbName = "DDDB")
 
 LHCbApp().DDDBtag = cfg.DDDBtag
 LHCbApp().CondDBtag = cfg.CondDBtag
@@ -82,11 +77,17 @@ appConf.ExtSvc+= [
 appConf.TopAlg += [
                    "FTMCHitSpillMerger",
                    "MCFTDepositCreator",
+                   "MCFTPhotonMonitor",
                    "MCFTDepositMonitor",
                    "MCFTDigitCreator",
+                   "MCFTDigitMonitor",
                    "FTClusterCreator",
+                   "FTClusterMonitor",
                    #"FTNtupleMaker"
                    ]
+
+from Configurables import EventSelector
+EventSelector().PrintFreq  = 100
 
 
 ######################################
@@ -158,12 +159,12 @@ while True:
     digits = evt['/Event/MC/FT/Digits'].containedObjects()
     
     for digit in digits:
-        print "IN"
+        #print "IN"
     
         jump = False
-        hits = digit.deposit().mcHitVec()
-        for h in hits :
-            mother = h.mcParticle().mother()
+        deposits = digit.deposits()
+        for d in deposits :
+            mother = d.mcHit().mcParticle().mother()
             if "NULL" not in mother.__str__() : 
                 jump = True
                 break
@@ -174,7 +175,7 @@ while True:
         ## If PACIFIC use bits: 1,2,3
         adc = digit.photoElectrons()
         if cfg.pacific : adc = digit.adcCount()
-        print adc
+        #print adc
         if channel.layer() in layers and channel.sipm() in sipmIDs and channel.module() == 4 and channel.quarter() == 3 and channel.station() == 1 and channel.mat()==0:
             sipmValPtr[channel.layer()][channel.sipm()][channel.channel()][0] = adc
  
