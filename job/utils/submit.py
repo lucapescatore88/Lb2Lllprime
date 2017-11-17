@@ -35,37 +35,8 @@ def launch_interactive(dirname) :
     os.system('ssh -o StrictHostKeyChecking=no %s "cd ' % node + dirname  + '; chmod +x run.sh ; ./run.sh" &')
     print "Start: ", datetime.now()
 
-## Main
 
-if __name__ == "__main__" :
-
-    parser = ArgumentParser()
-    parser.add_argument("-d", default="", dest="subdir", 
-        help="Folder of the job, notice that the job is created anyway in a folder called as the jobname, so this is intended to group jobs")
-    parser.add_argument("-r", default=-1, dest="run", help="Add run number")
-    parser.add_argument("-D", default=os.getenv("JOBDIR"), dest="basedir",
-        help="This option bypasses the JOBDIR environment variable and creates the job's folder in the specified folder")
-    parser.add_argument("-n", default="", dest="jobname", 
-        help="Give a name to the job. The job will be also created in a folder with its name (default is the executable name)")
-    parser.add_argument("--bash", dest="shell", default = "", action="store_const", const = "#!/usr/bin/env bash",
-        help="Initialize a new bash shell before launching" )
-    parser.add_argument("--tcsh", dest="shell", default = "", action="store_const", const = "#!/usr/bin/env tcsh",
-        help="Initialize a new tcsh shell before launching" )
-    parser.add_argument("-q", dest="queue", default = "8nh", help="Choose bach queue (default 8nh)" )
-    parser.add_argument("-s", dest="setup", default = "", help="Add a setup line to the launching script" )
-    parser.add_argument("--noClean", dest="clean", action="store_false",
-        help="If the job folder already exists by default it cleans it up. This option bypasses the cleaning up" )
-    parser.add_argument("--interactive", dest="interactive", action="store_true",
-        help="Submits on lxplus without using the batch system" )
-    parser.add_argument("--uexe", dest="unique", action="store_true",
-        help="Copy the executable only once in the top folder (and not in each job folders)" )
-    parser.add_argument("--local", dest="local",  action="store_true",
-        help="Launch the jobs locally (and not in the batch system)" )
-    parser.add_argument("-m", dest="mail", default = "", action="store_const", const = "-u "+os.environ["USER"]+"@cern.ch",
-        help="When job finished sends a mail to USER@cern.ch" )
-    parser.add_argument("-in", dest="infiles", default = "", help="Files to copy over")
-    parser.add_argument("command", help="Command to launch")
-    opts = parser.parse_args()
+def launch_job(opts) :
 
     random.seed()
     exe, execname = None, None
@@ -100,8 +71,9 @@ if __name__ == "__main__" :
     if(opts.unique) : copyto = subdirname
     else : copyto = dirname
     
-    os.system("cp " + execname + " " + copyto )
-    print("cp " + execname + " " + copyto )
+    if not opts.abspath :
+        os.system("cp " + execname + " " + copyto )
+    #print("cp " + execname + " " + copyto )
     
     for arg in opts.infiles.split() :
         os.system("cp " + arg + " " + copyto )
@@ -118,19 +90,22 @@ if __name__ == "__main__" :
     if opts.setup != "" :
         runfile.write(opts.setup + "\n")
 
-    if '/' in execname:
-        pos = execname[::-1].find("/")
-        execshortname = execname[len(execname)-pos:]
-    else : execshortname = execname
-    if exe is None :   ### Ensure executable
-        runfile.write("chmod 755 " + copyto + "/" +execshortname +'\n')
-
-    if exe is None:
-        runfile.write( '{dir} {args}'.format(dir=copyto+"/"+execshortname,args=' '.join(args)) )
+    if opts.abspath :
+        runfile.write( opts.command )
     else :
-        runfile.write( '{exe} {dir} {args}'.format(exe=exe,dir=copyto+"/"+execshortname,args=' '.join(args)) )
+        if '/' in execname:
+            pos = execname[::-1].find("/")
+            execshortname = execname[len(execname)-pos:]
+        else : execshortname = execname
+        if exe is None :   ### Ensure executable
+            runfile.write("chmod 755 " + copyto + "/" +execshortname +'\n')
 
-    #if opts.local or opts.interactive :     ### Output
+        if exe is None:
+            runfile.write( '{dir} {args}'.format(dir=copyto+"/"+execshortname,args=' '.join(args)) )
+        else :
+            runfile.write( '{exe} {dir} {args}'.format(exe=exe,dir=copyto+"/"+execshortname,args=' '.join(args)) )
+
+    ### Output
     runfile.write( " >& " + dirname + "/out " )
     runfile.close()
     os.system( "chmod 755 " + dirname + "/run.sh" )
@@ -171,5 +146,47 @@ if __name__ == "__main__" :
 
     else :
         print "Can run in batch mode only on lxplus or the EPFL cluster. Go there or run with '--local'"
+
+
+parser = ArgumentParser()
+parser.add_argument("-d", default="", dest="subdir", 
+     help="Folder of the job, notice that the job is created anyway in a folder called as the jobname, so this is intended to group jobs")
+parser.add_argument("-r", default=-1, dest="run", help="Add run number")
+parser.add_argument("-D", default=os.getenv('HOME'), dest="basedir",
+    help="This option bypasses the JOBDIR environment variable and creates the job's folder in the specified folder")
+parser.add_argument("-n", default="", dest="jobname", 
+    help="Give a name to the job. The job will be also created in a folder with its name (default is the executable name)")
+parser.add_argument("--abspath", action="store_true", help="Uses script without copying it")
+parser.add_argument("--bash", dest="shell", default = "", action="store_const", const = "#!/usr/bin/env bash",
+    help="Initialize a new bash shell before launching" )
+parser.add_argument("--tcsh", dest="shell", default = "", action="store_const", const = "#!/usr/bin/env tcsh",
+    help="Initialize a new tcsh shell before launching" )
+parser.add_argument("-q", dest="queue", default = "8nh", help="Choose bach queue (default 8nh)" )
+parser.add_argument("-s", dest="setup", default = "", help="Add a setup line to the launching script" )
+parser.add_argument("--noClean", dest="clean", action="store_false",
+    help="If the job folder already exists by default it cleans it up. This option bypasses the cleaning up" )
+parser.add_argument("--interactive", dest="interactive", action="store_true",
+    help="Submits on lxplus without using the batch system" )
+parser.add_argument("--uexe", dest="unique", action="store_true",
+    help="Copy the executable only once in the top folder (and not in each job folders)" )
+parser.add_argument("--local", dest="local",  action="store_true",
+     help="Launch the jobs locally (and not in the batch system)" )
+parser.add_argument("-m", dest="mail", default = "", action="store_const", const = "-u "+os.environ["USER"]+"@cern.ch",
+     help="When job finished sends a mail to USER@cern.ch" )
+parser.add_argument("-in", dest="infiles", default = "", help="Files to copy over")
+parser.add_argument("-c","--command", default="", help="Command to launch")
+
+
+## Main
+
+if __name__ == "__main__" :
+
+    basedir = os.getenv("JOBDIR")
+    print basedir
+    opts = parser.parse_args()
+    if basedir is not None :
+        parser.basedir = basedir
+
+    launch_job(opts)
 
 

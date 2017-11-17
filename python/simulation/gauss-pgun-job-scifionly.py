@@ -1,9 +1,8 @@
 # the CondDB and DDDB tags for the 5x geometry require Gauss v50 or higher
 #
 
-import sys
+import sys, os
 import inspect
-import os
 from math import tan, radians
 
 from Gauss.Configuration import *
@@ -17,7 +16,7 @@ sys.path.append(local_dir)
 
 from Configurables import LHCbApp, CondDB
 
-def execute(pos="c", angle=0):
+def execute(pos="c", angle=0, eng=180, part=211):
   importOptions("$APPCONFIGOPTS/Gauss/Beam7000GeV-md100-nu7.6-HorExtAngle.py")
 
   importOptions("$LBPYTHIA8ROOT/options/Pythia8.py")
@@ -28,7 +27,6 @@ def execute(pos="c", angle=0):
   # FTv5
   importOptions('$APPCONFIGOPTS/Gauss/Gauss-Upgrade-Baseline-20150522.py')
   
-
   outpath = "testbeam_simulation_position_" + pos  + '_at_' + str(angle) + 'deg'
 
   Gauss().DataType = "Upgrade"
@@ -58,12 +56,14 @@ def execute(pos="c", angle=0):
 #default y table position: 72.4 cm
 
   posA = {
-          "x": 2600.55,
+          #"x": 2600.55,  ## Far from beam
+          "x" : 138.8,    ## Close to the beam: importan when using irradiated mats
           "y": 63.378,
           "z": 7783.228
          }  
   posC = {
-          "x" : 2600.55,
+          #"x" : 2600.55, ## Far from beam
+          "x" : 138.8,    ## Close to the beam: importan when using irradiated mats
           "y" : 2363.363,
           "z" : 7791.510
          }
@@ -104,8 +104,8 @@ def execute(pos="c", angle=0):
   ParticleGun().MaterialEval.Ymax = target_y + beam_width_y/2.
   
   # particle options 
-  ParticleGun().MaterialEval.PdgCode = 211
-  ParticleGun().MaterialEval.ModP = 150 * units.GeV
+  ParticleGun().MaterialEval.PdgCode = part
+  ParticleGun().MaterialEval.ModP = eng * units.GeV
   
   # Set min and max number of particles to produce in an event
   from Configurables import FlatNParticles
@@ -124,5 +124,5 @@ def execute(pos="c", angle=0):
 
   OutputStream("GaussTape").Output = "DATAFILE='PFN:%s.sim' TYP='POOL_ROOTTREE' OPT='RECREATE'"%outpath
 
-execute("a",25)
+execute("a",30,5,11)
 

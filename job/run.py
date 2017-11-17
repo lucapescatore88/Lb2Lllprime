@@ -14,15 +14,16 @@ send = False
 mail = os.getenv('USER')+"@cern.ch"
 
 parser = ArgumentParser()
-parser.add_argument("--outdir","-o", default=None)
-parser.add_argument("--digitype",    default = 'improved')
+parser.add_argument("-o","--outdir",     default=None)
+parser.add_argument("-d","--digitype",   default = 'detailed')
+parser.add_argument("-tb","--testbeam",  default = '2017')
 parser.add_argument("-t","--thresholds", default="'[1.5,2.5,3.5]'")
 parser.add_argument("--pacific",     action='store_true')
 parser.add_argument("--plot",        action='store_true')
 parser.add_argument("--doprint",     action='store_true')
 parser.add_argument("--nodigi",      action='store_true')
-parser.add_argument("--gen",         nargs=2, default=[])
-parser.add_argument("--steps",       default="Digi,Cluster,Comp")
+parser.add_argument("--gen",         nargs=4, default=[])
+parser.add_argument("--steps",       default="Digi,Comp")
 parser.add_argument("--test",        action='store_true')
 parser.add_argument("--params",      type=str, default="")
 opts = parser.parse_args()
@@ -32,33 +33,29 @@ if opts.outdir is None :
     print "Using default outputdir"
     outdir = jc.outdir
 
+simfiles = jc.db[opts.testbeam]['sim']
+testbeam_data = jc.db[opts.testbeam]['TB']
+
 #Scripts locations
 digi_script = jc.repo+'/python/digitisation/runDigitisationForTestBeam.py'
 sim_script = jc.repo+'/python/simulation/gauss-pgun-job-scifionly.py'
-cluster_script = jc.repo+"/build/bin/clusterAnalysis"
 compare_script = jc.repo+"/python/analysis/PlotCompare.py"
 
 #Commands to launch
 
 sim_cmd     = 'mkdir -p {outdir} && cd {outdir} && '+jc.gauss+'/run gaudirun.py {script} &> {outdir}/simlog_{name}'
 
-digi_cmd    = 'mkdir -p {outdir} && cd {outdir} && '+jc.boole+'/run python {script} -f {f} -r {outdir} --digitype {digitype} '
+digi_cmd    = 'mkdir -p {outdir} && cd {outdir} && LbLogin.sh -c x86_64-slc6-gcc62-opt && '+jc.boole+'/run python {script} -f {f} -r {outdir} --digitype {digitype} '
 if opts.pacific : digi_cmd += '--pacific '
 digi_cmd += "  --thresholds " + opts.thresholds
 if opts.params != "" : digi_cmd += ' --params {pms} '.format(pms=opts.params)
 digi_cmd += ' &> {outdir}/digilog_{name}'
 
-thrs = opts.thresholds.replace(","," ").replace("[","").replace("]","").replace("'","").replace("\"","")
-cluster_cmd =  'mkdir -p {outdir} && cd {outdir}  && lb-run Urania/v6r1 {script} -f {f} -s 1 -o {outdir} --thresholds '+thrs
-if opts.pacific : cluster_cmd += ' --pacific  '
-cluster_cmd += ' &> {outdir}/clusterlog_{name} '
-
-compare_cmd = 'mkdir -p {outdir} && cd {outdir} && source SetupProject.sh root &> {outdir}/setuplog && python {script} -d {outdir} '
-compare_cmd += '-testbt btTree '
-if jc.g4_sim is not None : compare_cmd += ' -g4f {g4f} -g4t statTree ' 
-compare_cmd += '-testbf {tbf} -simf {simf}'
+compare_cmd = 'mkdir -p {outdir} && cd {outdir} && lb-run ROOT python {script} -d {outdir} '
+compare_cmd += '-testbf {tbf} ' 
+compare_cmd += '-simf {simf} '
 #if not opts.plot : compare_cmd += ' --noplot'
-compare_cmd += ' &> {outdir}/comparelog'
+compare_cmd += ' &>> {outdir}/comparelog_{pos}_{ang} '
 
 
 ## Start program
@@ -68,103 +65,75 @@ if len(opts.gen) > 0:
 
     poss = opts.gen[0].split(',')
     angs = opts.gen[1].split(',')
+    eng  = opts.gen[2]
+    part = opts.gen[3]
     for pos in poss :
         for ang in angs :
             
-            os.system("sed 's|^execute(.*|execute(\"{pos}\",{ang})|g' -i {script}".format(pos=pos,ang=ang,script=sim_script))
+            os.system("sed 's|^execute(.*|execute(\"{pos}\",{ang},{eng},{part})|g' -i {script}".format(
+                pos=pos,ang=ang,script=sim_script,eng=eng,part=part,irrad=irrad))
             os.system("cp "+sim_script+" .")
             curcmd = sim_cmd.format(script=sim_script,outdir=outdir+"sim/",name='{}_{}'.format(pos,ang))
             if opts.doprint : print curcmd
              
-            #sbtcmd = repo+"/job/utils/submit.py --noscript --interactive -d scifiGen -n {name} ".format(name='{}_{}'.format(pos,ang))
-            sbtcmd = "python "+repo+"/job/utils/submit.py --noscript --local -d scifiGen -n {name} ".format(name='{}_{}'.format(pos,ang))
-            sbtcmd += "-s 'source "+repo+"/job/setup.sh' "
-            sbtcmd += "-in gauss-pgun-job-scifionly.py '"
-            sbtcmd += jc.gauss+"/run gaudirun.py gauss-pgun-job-scifionly.py' "
+            sbtcmd = "python "+repo+"/job/utils/submit.py --abspath --local -d sim_{eng}GeV{part} -n {pos}_{ang} ".format(
+                    pos=pos,ang=ang,eng=eng,part=part)
+            sbtcmd += "-s 'source "+repo+"/setup.sh' "
+            sbtcmd += "-in gauss-pgun-job-scifionly.py "
+            sbtcmd += " -c '"+jc.gauss+"/run gaudirun.py gauss-pgun-job-scifionly.py' "
             curcmd = sbtcmd
-             
+            
             if not opts.test : sb.call(curcmd,shell=True)
 
-    files = glob(outdir+"/sim/*.sim")
+    files = glob(outdir+"/*/*.sim")
 else :
-    files = glob(jc.simfiles+"/*.sim")
+    files = glob(simfiles)
 
 if opts.nodigi :
     sys.exit()
 
 ## Digitising
 if opts.doprint : print "Digitizing ", len(files), " .sim files."
-
+#print files
 for f in files :
 
-    if not "Digi" in opts.steps :  continue
+    if "Digi" not in opts.steps : continue
 
     name = os.path.basename(f)
     name = os.path.splitext(name)[0]
     curcmd = digi_cmd.format(script=digi_script,f=f,outdir=outdir+"/digitised/",name=name,digitype=opts.digitype)
+    if 'irrad' in opts.testbeam : curcmd += " --irrad "
     if opts.doprint : print curcmd
     if not opts.test : 
         print "Digitising..."
         sb.call(curcmd,shell=True)
         print curcmd
 
-## Clusterising
-
-#print outdir+"/digitised/testbeam*.root"
-allfiles = glob(outdir+"/digitised/testbeam*.root")
-
-print allfiles
-files = []
-for x in allfiles :
-    if "histos" not in x : files.append(x)
-print files
-if opts.doprint : print "Clustering ", len(files), " files."
-
-for f in files :
-
-    if not "Cluster" in opts.steps :  continue
-
-    name = os.path.basename(f)
-    name = os.path.splitext(name)[0]
-    curcmd = cluster_cmd.format(script=cluster_script,f=f,outdir=outdir+"/clusters/",name=name)
-    if opts.doprint : print curcmd
-    if not opts.test : 
-        print "Clusterising..."
-        sb.call(curcmd,shell=True)  
-
-## Compring plots
-files = glob(outdir+"/clusters/*.root")
+## Comparing
+files = glob(outdir+"/digitised/testbeam*histos.root")
 if opts.doprint : print "Comparing ", len(files), " files."
 
 for f in files :
 
     if "Comp" not in opts.steps : continue
 
-    matches = re.match(".*?_(\d+)deg",f)
-    ang = matches.groups()[0]
+    matches = re.findall("(\d+)deg",f)
+    ang = matches[0]
     pos = "A"
     if "position_c" in f : pos = "C"
 
-    testbeam_file = jc.testbeam_data
-    testbeam_file += "pos" + pos
-    testbeam_file += "-angle" + ang
-    testbeam_file += "_datarun_ntuple_corrected_clusterAnalyis.root"
+    testbeam_file = testbeam_data
+    testbeam_file += "pos{pos}-angle{ang}".format(pos=pos,ang=ang)
+    testbeam_file += ".root"
     
-    if jc.g4_sim is not None :
-        g4file = "'"+jc.g4_sim+"/statFile_CT_PosA_{ang}degreepi-_-120_20000_5,6_5,5.root'".format(ang=ang)
-        curcmd = compare_cmd.format(script=compare_script,simf=f,outdir=outdir+"/comparisons/",g4f=g4file,tbf=testbeam_file)
-    else :
-        curcmd = compare_cmd.format(script=compare_script,simf=f,outdir=outdir+"/comparisons/",tbf=testbeam_file)
+    curcmd = compare_cmd.format(script=compare_script,simf=f,outdir=outdir+"/comparisons/",
+            tbf=testbeam_file,pos=pos,ang=ang)
+    if 'irrad' in opts.testbeam : curcmd += " --irrad "
 
     if opts.doprint : print curcmd
     if not opts.test : 
         print "Comparing..."
         sb.call(curcmd,shell=True)
-
-# Pack everything into a tar and send it to "mail"
-if not opts.test and send :
-    sb.call("tar -czf ~/SciFi_comparisons.tar -C comparisons "+outdir+"/comparisons/*.png",shell=True)
-    sb.call('echo "TestBeam comparisons" | mutt -s "TestBeam" -a ~/SciFi_comparisons.tar -- '+mail,shell=True)
 
 
 

@@ -17,6 +17,7 @@ if repo is None :
     print "Please setup the environment befire running!"
     sys.exit()
 
+from python.digitisation.setupBooleForDigitisation import pickle_params
 import job_config as jc
 from job.utils.value import Value
 from job.utils.wheel import Wheel
@@ -25,6 +26,7 @@ from job.utils.submit import launch_interactive
 from setupBooleForDigitisation import get_params
 
 wheel = Wheel()
+avail_vars = ['CrossTalkProb','MirrorRefl','PhotonsPerMeV']
 
 def pickle_params(values, path="") :
 
@@ -45,20 +47,22 @@ class OptimizeParams :
     chi2_distr = []
     curiter = 0
     ntotpoints = 1
-    launch_modes = ["local","interactive","batch"]
+    launch_modes = ["local","batch"]
 
     def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", 
-            forcenpts = False, digitype = "detailed", pacific = False, thresholds = "'[1.5,2.5,4.5]'") :
+            forcenpts = False, digitype = "detailed", pacific = False, thresholds = "'[1.5,2.5,4.5]'", verb = False, tb = '2017') :
 
         self.outdir = outdir
         self.niterations = niter
         self.mode = mode
         self.launch_mode = launch_mode
-        self.ngenfiles = len(glob(jc.simfiles+"/*.sim"))
+        self.ngenfiles = len(glob(jc.simfiles))
         self.forcenpts = forcenpts
         self.digitype = digitype
         self.pacific = pacific
         self.thresholds = thresholds
+        self.verb = verb
+        self.tb = tb
         pac = ""
         if self.pacific : pac = " --pacific "
         self.cmd = "python "+repo+"/job/run.py --digitype {dtype} {pacific} --thresholds {thresholds}".format(
@@ -70,35 +74,35 @@ class OptimizeParams :
         else : 
             print "Attention: mode '"+mode+"' unknown. Possible modes are: ", self.launch_modes
 
-    def add_variable(self,name,mini,maxi,nbins=9,limits = None) :
+    def add_variable(self,name,mini,maxi,npts=10,limits = None) :
         
-        if nbins%2==0 and not self.forcenpts:
-            print "The number of bins must be odd! Adding one bin."
-            nbins += 1
-        self.variables[name] = { "range" : [mini,maxi], "scanrange": [mini,maxi], "nbins" : nbins  }
+        if npts%2==0 and not self.forcenpts:
+            print "The number of pointd must be even! Adding one point."
+            npts += 1
+        self.variables[name] = { "range" : [mini,maxi], "scanrange": [mini,maxi], "npts" : npts  }
         if limits : self.variables[name]["limit"] = limits
-        self.ntotpoints *= (nbins+1)
+        self.ntotpoints *= npts
 
     def define_grid(self, bestpoints) :
 
         if bestpoints is not None :
             for b,val in bestpoints.iteritems() :
                 v = self.variables[b]
-                step = mystep = (v["scanrange"][1] - v["scanrange"][0]) / float(v["nbins"])
-                v["scanrange"][0] = val - step * (1 - 1. / v["nbins"])
-                v["scanrange"][1] = val + step * (1 - 1. / v["nbins"])
+                step = (v["scanrange"][1] - v["scanrange"][0]) / float(v["npts"]-1)
+                v["scanrange"][0] = val - step * (1 - 1. / v["npts"]-1)
+                v["scanrange"][1] = val + step * (1 - 1. / v["npts"]-1)
                 if "limit" not in v : continue
                 if v["scanrange"][0] < v["limit"][0] : v["scanrange"][0] = v["limit"][0]
                 if v["scanrange"][1] > v["limit"][1] : v["scanrange"][1] = v["limit"][1]
 
         for vn,v in self.variables.iteritems() :
             self.grid[vn] = []
-            nbins = v["nbins"]
+            npts = v["npts"]
             mymin = v["scanrange"][0]
             mymax = v["scanrange"][1]
-            mystep = (mymax - mymin) / float(nbins)
+            mystep = (mymax - mymin) / float(npts - 1)
             v["step"] = mystep
-            for i in range(nbins+1) :
+            for i in range(npts) :
                 self.grid[vn].append( mymin + mystep * i  )
 
         ranges = [ self.grid[vn] for vn in self.vorder ]
@@ -108,8 +112,6 @@ class OptimizeParams :
 
         host = os.getenv("HOSTNAME")
         is_lxplus = ( "lxplus" in host )
-        if not is_lxplus and "lphe" not in host :
-            print "This script is made to run only on lxplus or EPFL cluster. Go there!"
         if not is_lxplus and self.launch_mode == "interactive" :
             print "Interactive mode is only possible on lxplus. Switching to batch."
             self.launch_mode = "batch"
@@ -118,26 +120,19 @@ class OptimizeParams :
         if self.launch_mode == "local" :
             
             runf = outdir + "/run.sh"
-            print self.cmd+" --params "+params+ " --outdir " + outdir
+            if self.verb : print self.cmd+" --params "+params+ " --outdir " + outdir
             #print "chmod +x " + runf + " && " + runf
             sb.call(self.cmd+" --params "+params+ " --outdir " + outdir, shell=True)
             
-        elif is_lxplus :
+        elif is_lxplus or "lphe" in host :
         
-            ## Command for parallel running on lxplus in interactive mode
-            ##if self.launch_mode == "interactive" :
-            ##    launch_interactive(outdir)
-            ##
-            ## Command for prallel running on lxplus bach system
-            ##else :
-                
             batch_cmd = "bsub -R 'pool>30000' -o {dir}/out -e {dir}/err -q {queue} -J {jname} < {dir}/run.sh"
             batch_cmd = batch_cmd.format(dir=outdir,queue="1nd",jname=outdir)
-            print batch_cmd
+            if self.verb : print batch_cmd
             sb.call(batch_cmd,shell=True)
 
-        else :
-            print "You are not on Lxplus, you can't run in batch mode"
+        else : print "This script is made to run only on lxplus or EPFL cluster. Go there!"
+        
 
     def send_jobs(self) :
 
@@ -169,7 +164,7 @@ class OptimizeParams :
 
             frun = open(outdir + "/run.sh","w")
             frun.write("source "+repo+"/setup.sh &> setuplog\n")
-            frun.write(self.cmd+" --params "+param_file + " --outdir " + outdir)
+            frun.write(self.cmd + " --params {params} --outdir {outdir} --tb {tb}".format(params=param_file,outdir=outdir,tb=self.tb) )
             frun.close()
             sb.call("chmod +x " + outdir + "/run.sh",shell=True)
 
@@ -203,7 +198,9 @@ class OptimizeParams :
             msg = "\r  "+w+"   Iteration {0}/{1}, jobs finished {2}/{3}"
             sys.stdout.write(msg.format(self.curiter,self.niterations,nfiles,self.ntotpoints))
             sys.stdout.flush()
-            if nfiles > 0 and nfiles % int( self.ntotpoints ) == 0 : break
+            if (nfiles > 0 and nfiles % int( self.ntotpoints ) == 0) : break
+            #if nfiles >= self.ntotpoints : 
+            #    break
 
         print "\nIteration {0}/{1}. Production finished. Calculating chi2.......".format(self.curiter,self.niterations)
         for d in glob(self.outdir+"/"+str(self.curiter)+"/opt*") :
@@ -216,24 +213,20 @@ class OptimizeParams :
             
             chi2 = 0
             chi2files = glob(d+"/comparisons/chi2*.txt")
-            if len(chi2files) == 0: print d
+            if len(chi2files) == 0 : print d
             for f in chi2files :
                 
-                if jc.sample_to_compare == "G4" :
-                    line = open(f).readlines()[0]  ## G4-Boole chi2
-                else :
-                    line = open(f).readlines()[1]   ## Testbeam-Boole chi2
+                line = open(f).readlines()[0]   ## Testbeam-Boole chi2
                 elements = line.split()
                 chi2 += float(elements[0])
-            
-            chi2 /= len(chi2files)
+                 
             self.chi2_distr.append( (tuple(values), chi2) )
 
     def optimize(self) :
 
         print "Using variables:"
         for vn,v in self.variables.iteritems() :
-            print vn, ":", v['range'], ", nbins: ", v['nbins']
+            print vn, ":", v['range'], ", npts: ", v['npts']
 
         if os.path.exists(self.outdir) :
             dirs = glob(self.outdir+"/*")
@@ -263,25 +256,14 @@ class OptimizeParams :
             self.collect_data()
             bestpoints = self.find_best()
         
-        print "\n\n** Optimization done! **\nBest point: "
+        print "\n** Optimization done! **\nBest point: "
         print bestpoints
         self.make_plot()
-
-        #odir = self.outdir+"/best"
-        #if not os.path.exists(odir) : os.mkdir(odir)
-        #config_file = configure_params(bestpoints,odir+"/")
-        #    
-        #frun = open(odir + "/run.sh","w")
-        #frun.write("source "+repo+"/job/setup.sh &> setuplog\n")
-        #frun.write("python "+repo+"/job/run.py " + odir + "/ " + config_file + " --plot")
-        #frun.close()
-        #
-        #self.launch(odir,config_file)
 
     def make_plot(self) :
 
         c = ROOT.TCanvas()
-        rfile = ROOT.TFile("optimization.root","recreate")
+        rfile = ROOT.TFile(self.outdir+"/optimization.root","recreate")
         for i,v in enumerate(self.vorder) :
             chi21D = slice_best(i,self.chi2_distr)
             sorted_list = sorted( chi21D, key=lambda x:x[0][i] )
@@ -340,13 +322,19 @@ if __name__ == '__main__':
     parser.add_argument("-d","--digi", default="detailed" )
     parser.add_argument("-t","--thresholds", default="'[1.5,2.5,4.5]'")
     parser.add_argument("-p","--pacific",  action='store_true')
+    parser.add_argument("-v","--verb",  action='store_true')
+    parser.add_argument("-tb","--testbeam",  default="2017")
     parser.add_argument("variables",default = "[Var('CrossTalkProb',0.20,0.40,19)]")
     opts = parser.parse_args()
 
     variables = eval(opts.variables)
+    for v in variables :
+        if v.name not in avail_vars :
+            print "Variable",v.name,"unknown"
+            sys.exit()
 
     optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, 
-            digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds)
+            digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds, verb=opts.verb, tb=opts.tb)
     if opts.local : optimizer.set_launch_mode("local")
     else : optimizer.set_launch_mode("batch")
 
