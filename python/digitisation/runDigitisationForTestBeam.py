@@ -22,7 +22,6 @@ parser.add_argument('-ir', '--irrad', action="store_true")
 cfg = parser.parse_args()
 params = get_params()
 if cfg.irrad : params['irrad'] = True
-print params
 if cfg.params != '' : params.update(pickle.load(open(cfg.params)))
 
 files = glob(cfg.files)
