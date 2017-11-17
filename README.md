@@ -1,46 +1,23 @@
 # SciFiTestbeamAndSimulation
-To compile the code, create a build directory and run cmake:
+
+To setup 
 ```
-lb-run Urania/v6r1 bash
-mkdir build
-cd build
-cmake ..
+source setup.sh
 ```
 
-Then you can run
+To produce testbeam simulated samples
 ```
-make <the program I want to compile>
-```
-where the possible programs are present in the main folder:
-```
-produceCorrectedFile : produces a new file that contains the pedestal and gain corrected data
-clusterAnalysis : searches for clusters in a corrected data file
-```
-To run the compiled program from the build folder, run
-```
-./bin/the_program
+python job/run.py --gen {a,c} {ang1,ang2,...} {Energy in GeV} {Particle}
 ```
 
-Available options for `produceCorrectedFile` are:
+To run a digitisation job with comparisons:
 ```
---file2correct, -f : test beam data file containing the data run
---umax, -u",  : uplink number to stop at [1, ... , 8], default_value(4)
---umin, -l", : "uplink number to start at [1, ... , 8], default_value(3)
+python job/run.py --testbeam {2015,2016,2017,2017irrad}
 ```
 
-Available options for `clusterAnalysis` are:
-```
---file, -f : corrected test beam data file(s), wild cards like *.root are also supported
---outputpath, -o : path to the output files
---debugoutput, -d : boolean to get the debug output
---simulation, -s : add this optiion if you are running on a simulated file
---tag, -t : tag that is added to the output file name, default_value("")
-```
+To run an optimisation on parameters please look at README\_OPTIMISATION.
 
-Compare the clusters of testbeam data and simulation with `PlotCompareTrees.py` in the `\python\analysis\` directory:
-```
-python PlotCompareTestbeamSimulation.py -ni <nicknameName> -d <outputDirectory> -i1 <inputTestbeamDataFile> -i2 <inputSimulationFile>
--t <decayTreeName>
-```
+
+
 
 
