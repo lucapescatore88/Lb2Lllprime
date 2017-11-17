@@ -17,10 +17,13 @@ parser.add_argument('-ths', '--thresholds', type=str, default="[1.5,2.5,4.5]")
 parser.add_argument('-r', '--resultPath', type=str, default="")
 parser.add_argument('-d', '--DDDBtag', type=str, default='upgrade/dddb-20170301') #default='dddb-20160304')
 parser.add_argument('-c', '--CondDBtag', type=str, default='upgrade/dev-scifi-attenuationmap') #default='sim-20150716-vc-md100')
+parser.add_argument('-ir', '--irrad', action="store_true")
 
 cfg = parser.parse_args()
-if cfg.params == "" : params = get_params()
-else : params = pickle.load(open(cfg.params))
+params = get_params()
+if cfg.irrad : params['irrad'] = True
+print params
+if cfg.params != '' : params.update(pickle.load(open(cfg.params)))
 
 files = glob(cfg.files)
 resultPath = cfg.resultPath

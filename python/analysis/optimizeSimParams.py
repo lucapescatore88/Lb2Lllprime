@@ -37,18 +37,19 @@ class OptimizeParams :
     launch_modes = ["local","batch"]
 
     def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", 
-            forcenpts = False, digitype = "detailed", pacific = False, thresholds = "'[1.5,2.5,4.5]'", verb = False) :
+            forcenpts = False, digitype = "detailed", pacific = False, thresholds = "'[1.5,2.5,4.5]'", verb = False, tb = '2017') :
 
         self.outdir = outdir
         self.niterations = niter
         self.mode = mode
         self.launch_mode = launch_mode
-        self.ngenfiles = len(glob(jc.simfiles+"/*.sim"))
+        self.ngenfiles = len(glob(jc.simfiles))
         self.forcenpts = forcenpts
         self.digitype = digitype
         self.pacific = pacific
         self.thresholds = thresholds
         self.verb = verb
+        self.tb = tb
         pac = ""
         if self.pacific : pac = " --pacific "
         self.cmd = "python "+repo+"/job/run.py --digitype {dtype} {pacific} --thresholds {thresholds}".format(
@@ -60,35 +61,35 @@ class OptimizeParams :
         else : 
             print "Attention: mode '"+mode+"' unknown. Possible modes are: ", self.launch_modes
 
-    def add_variable(self,name,mini,maxi,nbins=9,limits = None) :
+    def add_variable(self,name,mini,maxi,npts=10,limits = None) :
         
-        if nbins%2==0 and not self.forcenpts:
-            print "The number of bins must be odd! Adding one bin."
-            nbins += 1
-        self.variables[name] = { "range" : [mini,maxi], "scanrange": [mini,maxi], "nbins" : nbins  }
+        if npts%2==0 and not self.forcenpts:
+            print "The number of pointd must be even! Adding one point."
+            npts += 1
+        self.variables[name] = { "range" : [mini,maxi], "scanrange": [mini,maxi], "npts" : npts  }
         if limits : self.variables[name]["limit"] = limits
-        self.ntotpoints *= (nbins+1)
+        self.ntotpoints *= npts
 
     def define_grid(self, bestpoints) :
 
         if bestpoints is not None :
             for b,val in bestpoints.iteritems() :
                 v = self.variables[b]
-                step = mystep = (v["scanrange"][1] - v["scanrange"][0]) / float(v["nbins"])
-                v["scanrange"][0] = val - step * (1 - 1. / v["nbins"])
-                v["scanrange"][1] = val + step * (1 - 1. / v["nbins"])
+                step = (v["scanrange"][1] - v["scanrange"][0]) / float(v["npts"]-1)
+                v["scanrange"][0] = val - step * (1 - 1. / v["npts"]-1)
+                v["scanrange"][1] = val + step * (1 - 1. / v["npts"]-1)
                 if "limit" not in v : continue
                 if v["scanrange"][0] < v["limit"][0] : v["scanrange"][0] = v["limit"][0]
                 if v["scanrange"][1] > v["limit"][1] : v["scanrange"][1] = v["limit"][1]
 
         for vn,v in self.variables.iteritems() :
             self.grid[vn] = []
-            nbins = v["nbins"]
+            npts = v["npts"]
             mymin = v["scanrange"][0]
             mymax = v["scanrange"][1]
-            mystep = (mymax - mymin) / float(nbins)
+            mystep = (mymax - mymin) / float(npts - 1)
             v["step"] = mystep
-            for i in range(nbins+1) :
+            for i in range(npts) :
                 self.grid[vn].append( mymin + mystep * i  )
 
         ranges = [ self.grid[vn] for vn in self.vorder ]
@@ -150,7 +151,7 @@ class OptimizeParams :
 
             frun = open(outdir + "/run.sh","w")
             frun.write("source "+repo+"/setup.sh &> setuplog\n")
-            frun.write(self.cmd + " --params {params} --outdir {outdir} ".format(params=param_file,outdir=outdir) )
+            frun.write(self.cmd + " --params {params} --outdir {outdir} --tb {tb}".format(params=param_file,outdir=outdir,tb=self.tb) )
             frun.close()
             sb.call("chmod +x " + outdir + "/run.sh",shell=True)
 
@@ -184,8 +185,9 @@ class OptimizeParams :
             msg = "\r  "+w+"   Iteration {0}/{1}, jobs finished {2}/{3}"
             sys.stdout.write(msg.format(self.curiter,self.niterations,nfiles,self.ntotpoints))
             sys.stdout.flush()
-            #if (nfiles > 0 and nfiles % int( self.ntotpoints ) == 0) or nfiles >= self.ntotpoints*self.curniter : break
-            if nfiles >= self.ntotpoints : break
+            if (nfiles > 0 and nfiles % int( self.ntotpoints ) == 0) : break
+            #if nfiles >= self.ntotpoints : 
+            #    break
 
         print "\nIteration {0}/{1}. Production finished. Calculating chi2.......".format(self.curiter,self.niterations)
         for d in glob(self.outdir+"/"+str(self.curiter)+"/opt*") :
@@ -211,7 +213,7 @@ class OptimizeParams :
 
         print "Using variables:"
         for vn,v in self.variables.iteritems() :
-            print vn, ":", v['range'], ", nbins: ", v['nbins']
+            print vn, ":", v['range'], ", npts: ", v['npts']
 
         if os.path.exists(self.outdir) :
             dirs = glob(self.outdir+"/*")
@@ -308,6 +310,7 @@ if __name__ == '__main__':
     parser.add_argument("-t","--thresholds", default="'[1.5,2.5,4.5]'")
     parser.add_argument("-p","--pacific",  action='store_true')
     parser.add_argument("-v","--verb",  action='store_true')
+    parser.add_argument("-tb","--testbeam",  default="2017")
     parser.add_argument("variables",default = "[Var('CrossTalkProb',0.20,0.40,19)]")
     opts = parser.parse_args()
 
@@ -318,7 +321,7 @@ if __name__ == '__main__':
             sys.exit()
 
     optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, 
-            digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds, verb=opts.verb)
+            digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds, verb=opts.verb, tb=opts.tb)
     if opts.local : optimizer.set_launch_mode("local")
     else : optimizer.set_launch_mode("batch")
 

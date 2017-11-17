@@ -36,6 +36,13 @@ def setupBooleForDigitisation(params,digitype,thresholds) :
     FTMCHitSpillMerger().InputLocation = ["/Event/MC/FT/Hits"]
     FTMCHitSpillMerger().SpillTimes = [0.0]
 
+    from Configurables import MCFTPhotonMonitor
+    MCFTDepositCreator().addTool(MCFTG4AttenuationTool, "MCFTG4AttenuationTool")
+    MCFTPhotonMonitor().addTool(MCFTG4AttenuationTool, "MCFTG4AttenuationTool")
+    
+    MCFTDepositCreator().MCFTG4AttenuationTool.IrradiatedFibres = params['irrad']
+    MCFTPhotonMonitor().MCFTG4AttenuationTool.IrradiatedFibres = params['irrad']
+    
     MCFTDepositCreator().SimulationType = digitype
     MCFTDepositCreator().SimulateNoise = False
     MCFTDepositCreator().addTool(att)
@@ -53,7 +60,6 @@ def setupBooleForDigitisation(params,digitype,thresholds) :
     FTClusterCreator().ClusterMaxWidth = 99
     FTClusterCreator().LargeClusterSize = 99
 
-
 def pickle_params(values, path="") :
 
     values = get_params(values)
@@ -67,12 +73,15 @@ def pickle_params(values, path="") :
 
 def get_params(values = {}) :
 
+    if "irrad" not in values : 
+        values['irrad'] = False
     if "PhotonWidth" not in values :
         values["PhotonWidth"] = 0.33
     if "CrossTalkProb" not in values :
-        values["CrossTalkProb"] = 0.16 
+        #values["CrossTalkProb"] = 0.164 
+        values["CrossTalkProb"] = 0.145
     if "PhotonsPerMeV" not in values :
-        values["PhotonsPerMeV"] = 6000
+        values["PhotonsPerMeV"] = 6400
         #values["PhotonsPerMeV"] = 8000
     if "MirrorRefl" not in values:
         #values["MirrorRefl"] = 1.0
