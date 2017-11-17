@@ -17,7 +17,7 @@ def setupBooleForDigitisation(params,digitype,thresholds) :
     print "Thresholds -> ", thresholds
     print "Simulation type -> ", digitype
 
-    SiPMResponse().ElectronicsResponse = "flat"#Use flat SiPM time response 
+    SiPMResponse().ElectronicsResponse = "flat" # Use flat SiPM time response 
     
     att = MCFTG4AttenuationTool()
     att.MirrorReflectivity = params["MirrorRefl"]
@@ -60,16 +60,16 @@ def setupBooleForDigitisation(params,digitype,thresholds) :
     FTClusterCreator().ClusterMaxWidth = 99
     FTClusterCreator().LargeClusterSize = 99
 
-def pickle_params(values, path="") :
-
-    values = get_params(values)
-    print values
-
-    pklfile = open(path+"/params.pkl","w")
-    pickle.dump(values,pklfile)
-    pklfile.close()
-    
-    return path+"/params.pkl"
+#def pickle_params(values, path="") :
+#
+#    values = get_params(values)
+#    print values
+#
+#    pklfile = open(path+"/params.pkl","w")
+#    pickle.dump(values,pklfile)
+#    pklfile.close()
+#    
+#    return path+"/params.pkl"
 
 def get_params(values = {}) :
 

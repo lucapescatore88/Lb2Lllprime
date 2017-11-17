@@ -104,7 +104,10 @@ for f in files :
     curcmd = digi_cmd.format(script=digi_script,f=f,outdir=outdir+"/digitised/",name=name,digitype=opts.digitype)
     if 'irrad' in opts.testbeam : curcmd += " --irrad "
     if opts.doprint : print curcmd
-    if not opts.test : sb.call(curcmd,shell=True)
+    if not opts.test : 
+        print "Digitising..."
+        sb.call(curcmd,shell=True)
+        print curcmd
 
 ## Comparing
 files = glob(outdir+"/digitised/testbeam*histos.root")
@@ -128,7 +131,9 @@ for f in files :
     if 'irrad' in opts.testbeam : curcmd += " --irrad "
 
     if opts.doprint : print curcmd
-    if not opts.test : sb.call(curcmd,shell=True)
+    if not opts.test : 
+        print "Comparing..."
+        sb.call(curcmd,shell=True)
 
 
 
