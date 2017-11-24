@@ -164,7 +164,7 @@ class OptimizeParams :
 
             frun = open(outdir + "/run.sh","w")
             frun.write("source "+repo+"/setup.sh &> setuplog\n")
-            frun.write(self.cmd + " --params {params} --outdir {outdir} --tb {tb}".format(params=param_file,outdir=outdir,tb=self.tb) )
+            frun.write(self.cmd + " --params {params} --outdir {outdir} -tb {tb}".format(params=param_file,outdir=outdir,tb=self.tb) )
             frun.close()
             sb.call("chmod +x " + outdir + "/run.sh",shell=True)
 
