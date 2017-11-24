@@ -60,16 +60,16 @@ def setupBooleForDigitisation(params,digitype,thresholds) :
     FTClusterCreator().ClusterMaxWidth = 99
     FTClusterCreator().LargeClusterSize = 99
 
-#def pickle_params(values, path="") :
-#
-#    values = get_params(values)
-#    print values
-#
-#    pklfile = open(path+"/params.pkl","w")
-#    pickle.dump(values,pklfile)
-#    pklfile.close()
-#    
-#    return path+"/params.pkl"
+def pickle_params(values, path="") :
+
+    values = get_params(values)
+    print values
+
+    pklfile = open(path+"/params.pkl","w")
+    pickle.dump(values,pklfile)
+    pklfile.close()
+    
+    return path+"/params.pkl"
 
 def get_params(values = {}) :
 
@@ -79,7 +79,7 @@ def get_params(values = {}) :
         values["PhotonWidth"] = 0.33
     if "CrossTalkProb" not in values :
         #values["CrossTalkProb"] = 0.164 
-        values["CrossTalkProb"] = 0.145
+        values["CrossTalkProb"] = 0.135
     if "PhotonsPerMeV" not in values :
         values["PhotonsPerMeV"] = 6400
         #values["PhotonsPerMeV"] = 8000

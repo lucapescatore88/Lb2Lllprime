@@ -56,7 +56,7 @@ class OptimizeParams :
         self.niterations = niter
         self.mode = mode
         self.launch_mode = launch_mode
-        self.ngenfiles = len(glob(jc.simfiles))
+        self.ngenfiles = len(glob(jc.db[tb]['sim']))
         self.forcenpts = forcenpts
         self.digitype = digitype
         self.pacific = pacific
@@ -334,7 +334,7 @@ if __name__ == '__main__':
             sys.exit()
 
     optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, 
-            digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds, verb=opts.verb, tb=opts.tb)
+            digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds, verb=opts.verb, tb=opts.testbeam)
     if opts.local : optimizer.set_launch_mode("local")
     else : optimizer.set_launch_mode("batch")
 
