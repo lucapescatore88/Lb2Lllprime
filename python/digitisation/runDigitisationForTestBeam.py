@@ -16,7 +16,7 @@ parser.add_argument('-p', '--pacific', action="store_true")
 parser.add_argument('-ths', '--thresholds', type=str, default="[1.5,2.5,4.5]")
 parser.add_argument('-r', '--resultPath', type=str, default="")
 parser.add_argument('-d', '--DDDBtag', type=str, default='upgrade/dddb-20170301') #default='dddb-20160304')
-parser.add_argument('-c', '--CondDBtag', type=str, default='upgrade/dev-scifi-attenuationmap') #default='sim-20150716-vc-md100')
+parser.add_argument('-c', '--CondDBtag', type=str, default='sim-20171123-vc-md100') #default='sim-20150716-vc-md100')
 parser.add_argument('-ir', '--irrad', action="store_true")
 
 cfg = parser.parse_args()
@@ -31,10 +31,10 @@ print("Outputfile: " + fileName)
 
 
 from Gaudi.Configuration import *
-def fix_upgrade_dddb_tag():
-    allConfigurables['ToolSvc.GitDDDB'].Commit = cfg.DDDBtag
-    allConfigurables['ToolSvc.GitSIMCOND'].Commit = cfg.CondDBtag
-appendPostConfigAction(fix_upgrade_dddb_tag)
+#def fix_upgrade_dddb_tag():
+#    allConfigurables['ToolSvc.GitDDDB'].Commit = cfg.DDDBtag
+#    allConfigurables['ToolSvc.GitSIMCOND'].Commit = cfg.CondDBtag
+#appendPostConfigAction(fix_upgrade_dddb_tag)
 
 import GaudiPython as GP
 from GaudiConf import IOHelper
