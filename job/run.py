@@ -49,14 +49,16 @@ digi_cmd    = 'mkdir -p {outdir} && cd {outdir} && LbLogin.sh -c x86_64-slc6-gcc
 if opts.pacific : digi_cmd += '--pacific '
 digi_cmd += "  --thresholds " + opts.thresholds
 if opts.params != "" : digi_cmd += ' --params {pms} '.format(pms=opts.params)
-digi_cmd += ' &> {outdir}/digilog_{name}'
+digi_cmd += ' {irr} &> {outdir}/digilog_{name}'
 
 compare_cmd = 'mkdir -p {outdir} && cd {outdir} && lb-run ROOT python {script} -d {outdir} '
 compare_cmd += '-testbf {tbf} ' 
-compare_cmd += '-simf {simf} '
+compare_cmd += '-simf {simf} {irr} '
 #if not opts.plot : compare_cmd += ' --noplot'
 compare_cmd += ' &>> {outdir}/comparelog_{pos}_{ang} '
 
+irr = ""
+if 'irrad' in opts.testbeam : irr += " --irrad "
 
 ## Start program
 
@@ -71,7 +73,7 @@ if len(opts.gen) > 0:
         for ang in angs :
             
             os.system("sed 's|^execute(.*|execute(\"{pos}\",{ang},{eng},{part})|g' -i {script}".format(
-                pos=pos,ang=ang,script=sim_script,eng=eng,part=part,irrad=irrad))
+                pos=pos,ang=ang,script=sim_script,eng=eng,part=part))
             os.system("cp "+sim_script+" .")
             curcmd = sim_cmd.format(script=sim_script,outdir=outdir+"sim/",name='{}_{}'.format(pos,ang))
             if opts.doprint : print curcmd
@@ -101,8 +103,7 @@ for f in files :
 
     name = os.path.basename(f)
     name = os.path.splitext(name)[0]
-    curcmd = digi_cmd.format(script=digi_script,f=f,outdir=outdir+"/digitised/",name=name,digitype=opts.digitype)
-    if 'irrad' in opts.testbeam : curcmd += " --irrad "
+    curcmd = digi_cmd.format(script=digi_script,f=f,outdir=outdir+"/digitised/",name=name,digitype=opts.digitype,irr=irr)
     if opts.doprint : print curcmd
     if not opts.test : 
         print "Digitising..."
@@ -127,8 +128,7 @@ for f in files :
     testbeam_file += ".root"
     
     curcmd = compare_cmd.format(script=compare_script,simf=f,outdir=outdir+"/comparisons/",
-            tbf=testbeam_file,pos=pos,ang=ang)
-    if 'irrad' in opts.testbeam : curcmd += " --irrad "
+            tbf=testbeam_file,pos=pos,ang=ang,irr=irr)
 
     if opts.doprint : print curcmd
     if not opts.test : 

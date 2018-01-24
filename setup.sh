@@ -8,5 +8,5 @@ alias optimiseSim='python $SCIFITESTBEAMSIMROOT/python/analysis/optimizeSimParam
 
 alias run_cmake='cmake $SCIFITESTBEAMSIMROOT -DCMAKE_C_COMPILER=/afs/cern.ch/sw/lcg/releases/LCG_84/gcc/4.9.3/x86_64-slc6/bin/gcc -DCMAKE_CXX_COMPILER=/afs/cern.ch/sw/lcg/releases/LCG_84/gcc/4.9.3/x86_64-slc6/bin/g++'
 
-
+export GITCONDDBPATH=$SCIFITESTBEAMSIMROOT
 

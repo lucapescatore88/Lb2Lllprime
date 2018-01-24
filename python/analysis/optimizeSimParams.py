@@ -164,27 +164,30 @@ class OptimizeParams :
 
             frun = open(outdir + "/run.sh","w")
             frun.write("source "+repo+"/setup.sh &> setuplog\n")
-            frun.write(self.cmd + " --params {params} --outdir {outdir} -tb {tb}".format(params=param_file,outdir=outdir,tb=self.tb) )
+            frun.write(self.cmd + " --params {params} --outdir {outdir} --testbeam {tb}".format(params=param_file,outdir=outdir,tb=self.tb) )
             frun.close()
             sb.call("chmod +x " + outdir + "/run.sh",shell=True)
 
             self.launch(outdir,params=param_file)
             
     def find_best(self) :
-
+    
         chi2      = [ x[1] for x in self.chi2_distr ]
         minchi2   = min(chi2)
-        minchi2pt = self.chi2_distr[ chi2.index(minchi2) ][0]
-        print "Best chi2 --> ", minchi2, "at", 
-        
+        index = chi2.index(minchi2)
+
+        import copy
+        p = copy.deepcopy(self.chi2_distr[index])
+        print "Best point --->", p 
+         
         bestwitherr = []
         for iv,v in enumerate(self.vorder) :
-            bestwitherr.append( Value( minchi2pt[iv], self.variables[v]["step"]) )
+            bestwitherr.append( Value( p[0][iv], self.variables[v]["step"]) )
         print tuple(bestwitherr)
 
         bestpt = {}
         for vn,v in self.variables.iteritems() :
-            bestpt[vn] = minchi2pt[ self.variables[vn]["key"] ]
+            bestpt[vn] = p[0][ self.variables[vn]["key"] ]
             
         return bestpt 
      
@@ -219,7 +222,6 @@ class OptimizeParams :
                 line = open(f).readlines()[0]   ## Testbeam-Boole chi2
                 elements = line.split()
                 chi2 += float(elements[0])
-                 
             self.chi2_distr.append( (tuple(values), chi2) )
 
     def optimize(self) :

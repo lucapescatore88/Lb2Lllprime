@@ -26,12 +26,21 @@ def format_hist(h,it) :
 def get_tb_feature(f,fil,htmp,irrad = False) :
     
     if '2017' in fil.GetName() :
-        hname = 'TbSciFiTrackMonitor/' 
-        if irrad : hname += "DUT2_"
-        else : hname += "DUT1_"
-        hname += f
+        hname = 'dut1_' 
+        cuts = "track_chi2_no_dut < 4 && nHitsDUT1==1"
 
-        h = fil.Get(hname)
+        if irrad : 
+            hname = "dut2_"
+            cuts = "track_chi2_no_dut < 4 && nHitsDUT2==1 && dut2_channel > 80 && dut2_channel < 110"
+        hname += f
+        
+        print "##########################",hname
+        tupname = "TbSciFiTrackTuple/TbSciFiTrackTuple"
+        tup = fil.Get(tupname)
+
+        h = htmp.Clone("h"+f+"TestBeam")
+        tup.Draw(hname+">>"+h.GetName(),cuts)
+
     else :
         tree = fil.Get("btTree")
         h = htmp.Clone("h"+f+"TestBeam")
@@ -83,8 +92,8 @@ if __name__ == '__main__':
 
     #features = { 'clusterSize'       : {'title' : 'Cluster Size', 'min' : 0, 'max' : 6, 'sim' : 'FullClusterSize'},
     #             'clusterCharge'     : {'title' : 'Total cluster charge', 'min' : 5, 'max' : 40, 'sim' : 'FullClusterCharge'} }
-    features = { 'cluster_size'       : {'title' : 'Cluster Size', 'min' : 1, 'max' : 7, 'sim' : 'FullClusterSize'},
-                 'cluster_charge'     : {'title' : 'Total cluster charge', 'min' : 5, 'max' : 40, 'sim' : 'FullClusterCharge'} }
+    features = { 'clus_size'  : {'title' : 'Cluster Size', 'min' : 1, 'max' : 7, 'sim' : 'FullClusterSize'},
+                 'charge'     : {'title' : 'Total cluster charge', 'min' : 5, 'max' : 40, 'sim' : 'FullClusterCharge'} }
     
 
 

@@ -21,8 +21,9 @@ parser.add_argument('-ir', '--irrad', action="store_true")
 
 cfg = parser.parse_args()
 params = get_params()
-if cfg.irrad : params['irrad'] = True
 if cfg.params != '' : params.update(pickle.load(open(cfg.params)))
+if cfg.irrad : params['irrad'] = True
+print params
 
 files = glob(cfg.files)
 resultPath = cfg.resultPath
@@ -31,7 +32,9 @@ print("Outputfile: " + fileName)
 
 
 from Gaudi.Configuration import *
+#LHCbApp().CondDBtag  = "upgrade/dev-scifi-attenuationmap_SiPM_2014"
 #def fix_upgrade_dddb_tag():
+#    allConfigurables['ToolSvc.GitSIMCOND'].Commit = "upgrade/dev-scifi-attenuationmap_SiPM_2014"
 #    allConfigurables['ToolSvc.GitDDDB'].Commit = cfg.DDDBtag
 #    allConfigurables['ToolSvc.GitSIMCOND'].Commit = cfg.CondDBtag
 #appendPostConfigAction(fix_upgrade_dddb_tag)
@@ -50,6 +53,8 @@ RootHistCnv__PersSvc('RootHistCnv').ForceAlphaIds = True
 # RootHistSvc('RootHistSvc').OutputFile = 'histo.root'
 HistogramPersistencySvc().OutputFile = fileName.replace(".root","")+'_histos.root'
 
+from Configurables import NTupleSvc
+NTupleSvc().Output   = ["FILE1 DATAFILE='"+fileName.replace(".root","")+"_tuple.root' TYP='ROOT' OPT='NEW'"]
 
 from LinkerInstances.eventassoc import *
 import ROOT as R
@@ -67,7 +72,8 @@ LHCbApp().Simulation = True
 CondDB().Upgrade = True
 
 LHCbApp().DDDBtag = cfg.DDDBtag
-LHCbApp().CondDBtag = cfg.CondDBtag
+#LHCbApp().CondDBtag = cfg.CondDBtag
+LHCbApp().CondDBtag  = "upgrade/dev-scifi-attenuationmap_SiPM_2014"
 
 # Configure all the unpacking, algorithms, tags and input files
 appConf = ApplicationMgr()
@@ -85,7 +91,7 @@ appConf.TopAlg += [
                    "MCFTDigitMonitor",
                    "FTClusterCreator",
                    "FTClusterMonitor",
-                   #"FTNtupleMaker"
+                   "FTClusterTuple"
                    ]
 
 from Configurables import EventSelector
