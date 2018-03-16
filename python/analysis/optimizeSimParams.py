@@ -5,7 +5,7 @@
 ## N.B.: Requires setting up the enviroment by source job/setup.sh
 ## N.B.: Options such as output directory, data to compare, etc are set via job/job_options.py
 
-import os, time, shutil, sys, pickle
+import os, time, shutil, sys, pickle, re
 import subprocess as sb
 from glob import glob
 import ROOT, math
@@ -184,7 +184,10 @@ class OptimizeParams :
          
         bestwitherr = []
         for iv,v in enumerate(self.vorder) :
-            bestwitherr.append( Value( p[0][iv], self.variables[v]["step"]) )
+            step = 0
+            if 'step' in self.variables[v].keys() : 
+                step = self.variables[v]["step"]
+            bestwitherr.append( Value( p[0][iv], step) )
         print tuple(bestwitherr)
 
         bestpt = {}
@@ -203,9 +206,7 @@ class OptimizeParams :
             msg = "\r  "+w+"   Iteration {0}/{1}, jobs finished {2}/{3}"
             sys.stdout.write(msg.format(self.curiter,self.niterations,nfiles,self.ntotpoints))
             sys.stdout.flush()
-            if (nfiles > 0 and nfiles % int( self.ntotpoints ) == 0) : break
-            #if nfiles >= self.ntotpoints : 
-            #    break
+            if ((nfiles > 0 and nfiles % int( self.ntotpoints ) == 0) or self.norun) : break
 
         print "\nIteration {0}/{1}. Production finished. Calculating chi2.......".format(self.curiter,self.niterations)
         for d in glob(self.outdir+"/"+str(self.curiter)+"/opt*") :
@@ -218,7 +219,9 @@ class OptimizeParams :
             
             chi2 = 0
             chi2files = glob(d+"/comparisons/chi2*.txt")
-            if len(chi2files) == 0 : print d
+            #if len(chi2files) == 0 : 
+            #    print "Something wrong"
+            #    print d
             for f in chi2files :
                 
                 line = open(f).readlines()[0]   ## Testbeam-Boole chi2
@@ -240,7 +243,7 @@ class OptimizeParams :
                 if choice == 'y' :
                     shutil.rmtree(self.outdir)
                     os.mkdir(self.outdir)
-        else :
+        elif not self.norun :
             os.mkdir(self.outdir)
 
         self.vorder = []
@@ -332,13 +335,26 @@ if __name__ == '__main__':
     parser.add_argument("--norun", action="store_true")
     parser.add_argument("variables",default = "[Var('CrossTalkProb',0.20,0.40,19)]")
     opts = parser.parse_args()
-
+   
     variables = eval(opts.variables)
-    for v in variables :
-        if v.name not in avail_vars :
-            print "Variable",v.name,"unknown"
+    if len(variables) > 0 :
+        for v in variables :
+            if v.name not in avail_vars :
+                print "Variable",v.name,"unknown"
+                sys.exit()
+
+    if len(variables) == 0 and opts.norun :
+        files = glob(jc.outdir+"/1/*")
+        if len(files) == 0 :
+            print "Are you sure the job ran? I can't file files in folder ", c.outdir
             sys.exit()
 
+        first = files[0]
+        for v in avail_vars :
+            if len(re.findall(v,first)) > 0 :
+                print "Found", v
+                variables.append(Var(v,0.,1.,3))
+    
     optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, 
             digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds, 
             verb=opts.verb, tb=opts.testbeam, norun=opts.norun)
