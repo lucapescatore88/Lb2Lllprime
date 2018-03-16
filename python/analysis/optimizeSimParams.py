@@ -26,7 +26,7 @@ from job.utils.submit import launch_interactive
 from setupBooleForDigitisation import get_params
 
 wheel = Wheel()
-avail_vars = ['CrossTalkProb','MirrorRefl','PhotonsPerMeV']
+avail_vars = ['CrossTalkProb','MirrorRefl','PhotonsPerMeV','ChannelXTalkProb']
 
 def pickle_params(values, path="") :
 
@@ -50,7 +50,8 @@ class OptimizeParams :
     launch_modes = ["local","batch"]
 
     def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", 
-            forcenpts = False, digitype = "detailed", pacific = False, thresholds = "'[1.5,2.5,4.5]'", verb = False, tb = '2017') :
+            forcenpts = False, digitype = "detailed", pacific = False, thresholds = "'[1.5,2.5,4.5]'", 
+            verb = False, tb = '2017', norun = False) :
 
         self.outdir = outdir
         self.niterations = niter
@@ -63,9 +64,10 @@ class OptimizeParams :
         self.thresholds = thresholds
         self.verb = verb
         self.tb = tb
+        self.norun = norun
         pac = ""
         if self.pacific : pac = " --pacific "
-        self.cmd = "python "+repo+"/job/run.py --digitype {dtype} {pacific} --thresholds {thresholds}".format(
+        self.cmd = "lb-run ROOT python "+repo+"/job/run.py --digitype {dtype} {pacific} --thresholds {thresholds}".format(
                 dtype=self.digitype,pacific=pac,thresholds=self.thresholds)
 
     def set_launch_mode(self,mode) :
@@ -163,7 +165,7 @@ class OptimizeParams :
             param_file = pickle_params(vdict,outdir+"/")
 
             frun = open(outdir + "/run.sh","w")
-            frun.write("source "+repo+"/setup.sh &> setuplog\n")
+            #frun.write("source "+repo+"/setup.sh &> setuplog\n")
             frun.write(self.cmd + " --params {params} --outdir {outdir} --testbeam {tb}".format(params=param_file,outdir=outdir,tb=self.tb) )
             frun.close()
             sb.call("chmod +x " + outdir + "/run.sh",shell=True)
@@ -230,7 +232,7 @@ class OptimizeParams :
         for vn,v in self.variables.iteritems() :
             print vn, ":", v['range'], ", npts: ", v['npts']
 
-        if os.path.exists(self.outdir) :
+        if os.path.exists(self.outdir) and not self.norun :
             dirs = glob(self.outdir+"/*")
             if len(dirs) > 0 :
                 print "Using output directory:", self.outdir
@@ -253,8 +255,9 @@ class OptimizeParams :
             self.curiter += 1
             if not os.path.exists(self.outdir+"/"+str(self.curiter)) : 
                 os.mkdir(self.outdir+"/"+str(self.curiter))
-            self.define_grid(bestpoints)
-            self.send_jobs()
+            if not self.norun :
+                self.define_grid(bestpoints)
+                self.send_jobs()
             self.collect_data()
             bestpoints = self.find_best()
         
@@ -326,6 +329,7 @@ if __name__ == '__main__':
     parser.add_argument("-p","--pacific",  action='store_true')
     parser.add_argument("-v","--verb",  action='store_true')
     parser.add_argument("-tb","--testbeam",  default="2017")
+    parser.add_argument("--norun", action="store_true")
     parser.add_argument("variables",default = "[Var('CrossTalkProb',0.20,0.40,19)]")
     opts = parser.parse_args()
 
@@ -336,7 +340,8 @@ if __name__ == '__main__':
             sys.exit()
 
     optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, 
-            digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds, verb=opts.verb, tb=opts.testbeam)
+            digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds, 
+            verb=opts.verb, tb=opts.testbeam, norun=opts.norun)
     if opts.local : optimizer.set_launch_mode("local")
     else : optimizer.set_launch_mode("batch")
 

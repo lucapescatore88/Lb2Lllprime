@@ -1,6 +1,6 @@
 #!/usr/bin/python
-#Author : BELLEE Violaine
-#Date : 2015/04/22                                                                                                                                           
+#Author : PESCATORE Luca
+#Date : 2018/01/22                                                                                                                                           
 #Used to give nice appearance to the root histos created by GenerateCompareSignal.sh     
 
 import argparse
