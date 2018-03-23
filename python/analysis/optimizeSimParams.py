@@ -51,7 +51,7 @@ class OptimizeParams :
 
     def __init__(self,outdir = os.environ["PWD"], niter = 2, mode = "launch", launch_mode = "local", 
             forcenpts = False, digitype = "detailed", pacific = False, thresholds = "'[1.5,2.5,4.5]'", 
-            verb = False, tb = '2017', norun = False) :
+            verb = False, tb = '2017', norun = False, noirrarea = False) :
 
         self.outdir = outdir
         self.niterations = niter
@@ -65,6 +65,7 @@ class OptimizeParams :
         self.verb = verb
         self.tb = tb
         self.norun = norun
+        self.noirrarea = noirrarea
         pac = ""
         if self.pacific : pac = " --pacific "
         self.cmd = "lb-run ROOT python "+repo+"/job/run.py --digitype {dtype} {pacific} --thresholds {thresholds}".format(
@@ -123,10 +124,9 @@ class OptimizeParams :
             
             runf = outdir + "/run.sh"
             if self.verb : print self.cmd+" --params "+params+ " --outdir " + outdir
-            #print "chmod +x " + runf + " && " + runf
             sb.call(self.cmd+" --params "+params+ " --outdir " + outdir, shell=True)
             
-        elif is_lxplus or "lphe" in host :
+        elif is_lxplus : #or "lphe" in host :
         
             batch_cmd = "bsub -R 'pool>30000' -o {dir}/out -e {dir}/err -q {queue} -J {jname} < {dir}/run.sh"
             batch_cmd = batch_cmd.format(dir=outdir,queue="1nd",jname=outdir)
@@ -137,14 +137,6 @@ class OptimizeParams :
         
 
     def send_jobs(self) :
-
-        #if self.mode == "relaunch" and self.launch_mode != "local":
-        #    dirs = glob(self.outdir+"/*/*")
-        #    for d in dirs : 
-        #        if len(glob(d+"/comparisons/chi*.txt")) == self.ngenfiles : continue
-        #        print "Resubmiting:", d
-        #        self.launch(d)
-        #    return
 
         for ip,p in enumerate(self.grid["grid"]) :
             outdir = self.outdir+"/"+str(self.curiter)+"/options"
@@ -164,9 +156,11 @@ class OptimizeParams :
 
             param_file = pickle_params(vdict,outdir+"/")
 
+            area = ""
+            if self.noirrarea : area = "--noirrarea"
+            curcmd = self.cmd + " --params {params} --outdir {outdir} --testbeam {tb} ".format(params=param_file,outdir=outdir,tb=self.tb)
             frun = open(outdir + "/run.sh","w")
-            #frun.write("source "+repo+"/setup.sh &> setuplog\n")
-            frun.write(self.cmd + " --params {params} --outdir {outdir} --testbeam {tb}".format(params=param_file,outdir=outdir,tb=self.tb) )
+            frun.write(curcmd+area )
             frun.close()
             sb.call("chmod +x " + outdir + "/run.sh",shell=True)
 
@@ -187,8 +181,9 @@ class OptimizeParams :
             step = 0
             if 'step' in self.variables[v].keys() : 
                 step = self.variables[v]["step"]
+            #print p, iv, step
             bestwitherr.append( Value( p[0][iv], step) )
-        print tuple(bestwitherr)
+        #print tuple(bestwitherr)
 
         bestpt = {}
         for vn,v in self.variables.iteritems() :
@@ -203,9 +198,10 @@ class OptimizeParams :
             files = glob(self.outdir+"/"+str(self.curiter)+"/*/comparisons/chi2*.txt")
             nfiles = math.trunc( len(files) / self.ngenfiles )
             w = wheel.increment()
-            msg = "\r  "+w+"   Iteration {0}/{1}, jobs finished {2}/{3}"
-            sys.stdout.write(msg.format(self.curiter,self.niterations,nfiles,self.ntotpoints))
-            sys.stdout.flush()
+            if not self.norun :
+                msg = "\r  "+w+"   Iteration {0}/{1}, jobs finished {2}/{3}"
+                sys.stdout.write(msg.format(self.curiter,self.niterations,nfiles,self.ntotpoints))
+                sys.stdout.flush()
             if ((nfiles > 0 and nfiles % int( self.ntotpoints ) == 0) or self.norun) : break
 
         print "\nIteration {0}/{1}. Production finished. Calculating chi2.......".format(self.curiter,self.niterations)
@@ -219,15 +215,15 @@ class OptimizeParams :
             
             chi2 = 0
             chi2files = glob(d+"/comparisons/chi2*.txt")
-            #if len(chi2files) == 0 : 
-            #    print "Something wrong"
-            #    print d
             for f in chi2files :
                 
                 line = open(f).readlines()[0]   ## Testbeam-Boole chi2
                 elements = line.split()
                 chi2 += float(elements[0])
             self.chi2_distr.append( (tuple(values), chi2) )
+
+            #files_to_clean = glob(d+"/digitised/*.root")
+            #os.system("rm -f "+" ".join(files_to_clean))
 
     def optimize(self) :
 
@@ -264,6 +260,16 @@ class OptimizeParams :
             self.collect_data()
             bestpoints = self.find_best()
         
+        folders = glob(self.outdir+"/*/opt*")
+        bestfolder = ""
+        for f in folders :
+            isbest = True
+            for p,v in bestpoints.iteritems() :
+                if str(v) not in f : isbest = False
+            if isbest :
+                os.system("cp "+f+"/comparisons/*.pdf "+self.outdir)
+                break
+
         print "\n** Optimization done! **\nBest point: "
         print bestpoints
         self.make_plot()
@@ -282,7 +288,7 @@ class OptimizeParams :
             hist.GetXaxis().SetTitle(v)
             hist.GetYaxis().SetTitle("#chi^{2}")
             hist.SetTitle("")
-            c.Print("chi2_vs_"+v+".pdf")
+            c.Print(self.outdir+"/chi2_vs_"+v+".pdf")
             hist.Write("chi2_vs_"+v)
         rfile.Close()
 
@@ -333,9 +339,11 @@ if __name__ == '__main__':
     parser.add_argument("-v","--verb",  action='store_true')
     parser.add_argument("-tb","--testbeam",  default="2017")
     parser.add_argument("--norun", action="store_true")
+    parser.add_argument("--noirrarea", action="store_true")
     parser.add_argument("variables",default = "[Var('CrossTalkProb',0.20,0.40,19)]")
     opts = parser.parse_args()
-   
+  
+    if opts.variables=="" : opts.variables = "[]"
     variables = eval(opts.variables)
     if len(variables) > 0 :
         for v in variables :
@@ -350,6 +358,7 @@ if __name__ == '__main__':
             sys.exit()
 
         first = files[0]
+        first=first[first.rfind('/'):]
         for v in avail_vars :
             if len(re.findall(v,first)) > 0 :
                 print "Found", v
@@ -357,7 +366,7 @@ if __name__ == '__main__':
     
     optimizer = OptimizeParams(jc.outdir,niter = opts.niter, forcenpts = opts.forcenpts, 
             digitype = opts.digi, pacific=opts.pacific, thresholds = opts.thresholds, 
-            verb=opts.verb, tb=opts.testbeam, norun=opts.norun)
+            verb=opts.verb, tb=opts.testbeam, norun=opts.norun, noirrarea=opts.noirrarea)
     if opts.local : optimizer.set_launch_mode("local")
     else : optimizer.set_launch_mode("batch")
 

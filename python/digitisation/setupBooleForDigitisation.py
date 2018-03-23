@@ -84,10 +84,9 @@ def get_params(values = {}) :
         values["PhotonWidth"] = 0.33
     if "CrossTalkProb" not in values :
         #values["CrossTalkProb"] = 0.164 
-        values["CrossTalkProb"] = 0.23
+        values["CrossTalkProb"] = 0.225
     if "PhotonsPerMeV" not in values :
-        values["PhotonsPerMeV"] = 6680
-        #values["PhotonsPerMeV"] = 8000
+        values["PhotonsPerMeV"] = 6150
     if "MirrorRefl" not in values:
         #values["MirrorRefl"] = 1.0
         values["MirrorRefl"] = 0.75

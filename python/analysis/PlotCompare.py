@@ -23,7 +23,7 @@ def format_hist(h,it) :
     h.SetOption("E")
     h.Scale(1./h.Integral())
 
-def get_tb_feature(f,fil,htmp,irrad = False) :
+def get_tb_feature(f,fil,htmp,irrad = False, noirrarea=False) :
     
     if '2017' in fil.GetName() :
         hname = 'dut1_' 
@@ -32,9 +32,11 @@ def get_tb_feature(f,fil,htmp,irrad = False) :
         if irrad : 
             hname = "dut2_"
             cuts = "track_chi2_no_dut < 4 && nHitsDUT2==1 && dut2_channel > 80 && dut2_channel < 110"
+            if noirrarea : cuts = "track_chi2_no_dut < 4 && nHitsDUT2==1 && dut2_channel > 26 && dut2_channel < 36"
+            print cuts
+
         hname += f
         
-        print "##########################",hname
         tupname = "TbSciFiTrackTuple/TbSciFiTrackTuple"
         tup = fil.Get(tupname)
 
@@ -88,6 +90,7 @@ if __name__ == '__main__':
     parser.add_argument("-testbt", "--testbt" , default="clusterAnalysis")
     parser.add_argument("--noplot" , action="store_true")
     parser.add_argument("--irrad" , action="store_true")
+    parser.add_argument("--noirrarea", action="store_true") 
     args = parser.parse_args()
 
     #features = { 'clusterSize'       : {'title' : 'Cluster Size', 'min' : 0, 'max' : 6, 'sim' : 'FullClusterSize'},
@@ -109,7 +112,7 @@ if __name__ == '__main__':
         leg = TLegend(0.6,0.7,0.93,0.89)
         
         hs  = get_sim_feature(prop['sim'],simFile)
-        htb = get_tb_feature(f,tbFile,hs,args.irrad)
+        htb = get_tb_feature(f,tbFile,hs,args.irrad,args.noirrarea)
 
         fname = os.path.basename(args.testbf).replace(".root","").replace("_datarun_ntuple_corrected_clusterAnalyis","")
         format_hist(htb,1)

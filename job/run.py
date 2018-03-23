@@ -26,6 +26,7 @@ parser.add_argument("--gen",         nargs=4, default=[])
 parser.add_argument("--steps",       default="Digi,Comp")
 parser.add_argument("--test",        action='store_true')
 parser.add_argument("--params",      type=str, default="")
+parser.add_argument("--noirrarea",   action="store_true")
 opts = parser.parse_args()
 
 outdir = opts.outdir
@@ -54,6 +55,7 @@ digi_cmd += ' {irr} &> {outdir}/digilog_{name}'
 compare_cmd = 'mkdir -p {outdir} && cd {outdir} && lb-run ROOT python {script} -d {outdir} '
 compare_cmd += '-testbf {tbf} ' 
 compare_cmd += '-simf {simf} {irr} '
+if opts.noirrarea : compare_cmd += '--noirrarea '
 #if not opts.plot : compare_cmd += ' --noplot'
 compare_cmd += ' &>> {outdir}/comparelog_{pos}_{ang} '
 
